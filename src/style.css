@@ -334,11 +334,11 @@ body {
 }
 .ios-install-modal {
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
   background: #1e1f24;
   color: #ececf0;
-  border-radius: 16px;
-  padding: 20px 20px 16px;
+  border-radius: 20px;
+  padding: 20px 20px 24px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   transform: translateY(8px) scale(0.98);
   transition:
@@ -350,47 +350,47 @@ body {
   transform: translateY(0) scale(1);
   opacity: 1;
 }
+.ios-install-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
 .ios-install-title {
-  margin: 0 0 14px;
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
 }
-.ios-install-steps {
-  margin: 0 0 16px;
-  padding-left: 0;
-  list-style: none;
+.ios-install-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: #83899a;
+  padding: 4px;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  font-size: 14px;
+}
+.ios-install-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ios-install-row + .ios-install-row {
+  margin-top: 20px;
+}
+.ios-install-row p {
+  margin: 0;
+  font-size: 15px;
   line-height: 1.4;
-}
-.ios-install-steps li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
 }
 .ios-install-icon {
   flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4fa3e3;
-}
-.ios-install-close {
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  padding: 11px;
-  background: #4fa3e3;
-  color: #0c1a26;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
+  color: #ececf0;
 }

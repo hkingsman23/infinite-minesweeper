@@ -23,6 +23,9 @@ export const icons = {
   // iOS Safari's own share-sheet glyph — arrow up out of a box — used in the
   // "how to install" instructions modal since iOS has no automatic prompt.
   share: svg('<path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>', 22),
+  addBox: svg('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>', 22),
+  device: svg('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', 22),
+  close: svg('<path d="M18 6 6 18M6 6l12 12"/>', 18),
 } as const;
 
 export type IconName = keyof typeof icons;
