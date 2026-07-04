@@ -39,11 +39,41 @@ function applyThemeToDom() {
 // World is centred at a large offset so the player can pan in any direction
 // from the start without hitting a coordinate origin edge case.
 const WORLD_CENTER = 100000;
-const world = new World();
+const world = World.load();
 const camera = new Camera(window.innerWidth, window.innerHeight);
 const CENTER_PX = (WORLD_CENTER * SECTOR_SIZE + SECTOR_SIZE / 2) * TILE;
-camera.x = CENTER_PX;
-camera.y = CENTER_PX;
+
+const CAMERA_STORAGE_KEY = 'infinite-minesweeper-camera-v1';
+
+function loadCameraState(): { x: number; y: number; zoom: number } | null {
+  try {
+    const raw = localStorage.getItem(CAMERA_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCameraState() {
+  try {
+    localStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify({ x: camera.x, y: camera.y, zoom: camera.zoom }));
+  } catch {
+    // Non-fatal — resumes centred instead of exactly where you left off.
+  }
+}
+
+const savedCamera = loadCameraState();
+camera.x = savedCamera?.x ?? CENTER_PX;
+camera.y = savedCamera?.y ?? CENTER_PX;
+if (savedCamera) camera.setZoomImmediate(savedCamera.zoom);
+
+// visibilitychange fires reliably on mobile (backgrounding/locking), unlike
+// beforeunload which mobile OSes can skip entirely when a tab is killed;
+// beforeunload is kept too for desktop's more predictable close/refresh.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveCameraState();
+});
+window.addEventListener('beforeunload', saveCameraState);
 
 const renderer = new Renderer(ctx, window.innerWidth, window.innerHeight);
 const lockPanels = new LockPanelManager(panelHost, world, renderer);

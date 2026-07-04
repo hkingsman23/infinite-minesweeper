@@ -15,6 +15,35 @@ export type RevealEvent =
   | { type: 'gemsEarned'; amount: number }
   | { type: 'sectorAutoUnlocked'; sr: number; sc: number };
 
+const WORLD_STORAGE_KEY = 'infinite-minesweeper-world-v1';
+
+interface SerializedCell {
+  mine: boolean;
+  adjacent: number;
+  revealed: boolean;
+  flagged: boolean;
+  exploded: boolean;
+  flagWrong: boolean;
+}
+
+interface SerializedSector {
+  sr: number;
+  sc: number;
+  cleared: boolean;
+  locked: boolean;
+  isVault: boolean;
+  vaultClaimed: boolean;
+  genAttempts: number;
+  cells: SerializedCell[][];
+}
+
+interface SerializedWorld {
+  worldSeed: number;
+  everRevealed: boolean;
+  reservedSafe: string[];
+  sectors: SerializedSector[];
+}
+
 export class World {
   private sectors = new Map<string, Sector>();
   private firstSectorGenerated = false;
@@ -34,6 +63,77 @@ export class World {
 
   constructor(worldSeed = Date.now() & 0xffffffff) {
     this.worldSeed = worldSeed;
+  }
+
+  /** Restores a previously saved world from localStorage, or starts a fresh
+   * one with a new random seed if there's nothing saved (or it's corrupt).
+   * Mirrors Economy's persistence — without this, a refresh kept the gem
+   * balance and sectors-cleared count but generated a brand new board
+   * underneath it, which looked like "some stats didn't reset" when really
+   * the board was just never saved at all. */
+  static load(): World {
+    try {
+      const raw = localStorage.getItem(WORLD_STORAGE_KEY);
+      if (!raw) return new World();
+      const data: SerializedWorld = JSON.parse(raw);
+      const world = new World(data.worldSeed);
+      world.everRevealed = data.everRevealed;
+      world.reservedSafe = new Set(data.reservedSafe);
+      world.firstSectorGenerated = data.sectors.length > 0;
+      for (const s of data.sectors) {
+        const cells: CellState[][] = s.cells.map((row) => row.map((c) => ({ ...c, flipStart: null })));
+        world.sectors.set(sectorKeyStr(s.sr, s.sc), {
+          sr: s.sr,
+          sc: s.sc,
+          cells,
+          cleared: s.cleared,
+          locked: s.locked,
+          isVault: s.isVault,
+          vaultClaimed: s.vaultClaimed,
+          genAttempts: s.genAttempts,
+        });
+      }
+      return world;
+    } catch {
+      return new World();
+    }
+  }
+
+  /** Called after every player action that mutates board state (see call
+   * sites below) — not batched/debounced since each call is a plain
+   * JSON.stringify of already-in-memory state, cheap even for a large
+   * session. Silently no-ops on quota-exceeded/private-browsing failures,
+   * same tolerance as Economy.save(). */
+  private save() {
+    try {
+      const data: SerializedWorld = {
+        worldSeed: this.worldSeed,
+        everRevealed: this.everRevealed,
+        reservedSafe: [...this.reservedSafe],
+        sectors: [...this.sectors.values()].map((s) => ({
+          sr: s.sr,
+          sc: s.sc,
+          cleared: s.cleared,
+          locked: s.locked,
+          isVault: s.isVault,
+          vaultClaimed: s.vaultClaimed,
+          genAttempts: s.genAttempts,
+          cells: s.cells.map((row) =>
+            row.map((c) => ({
+              mine: c.mine,
+              adjacent: c.adjacent,
+              revealed: c.revealed,
+              flagged: c.flagged,
+              exploded: c.exploded,
+              flagWrong: c.flagWrong,
+            })),
+          ),
+        })),
+      };
+      localStorage.setItem(WORLD_STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // Non-fatal — the game just won't resume exactly where it left off.
+    }
   }
 
   on(fn: (e: RevealEvent) => void) {
@@ -152,6 +252,7 @@ export class World {
     cell.adjacent = this.revealAdjacencyAt(row, col);
     cell.flipStart = now;
     this.tryCompleteSector(sector, now);
+    this.save();
     return true;
   }
 
@@ -195,9 +296,11 @@ export class World {
       cell.flipStart = now;
       this.markWrongFlagsNear(row, col);
       this.emit({ type: 'mineHit', sr, sc });
+      this.save();
       setTimeout(() => {
         sector.locked = true;
         this.emit({ type: 'sectorLocked', sr, sc });
+        this.save();
       }, 460);
       return null;
     }
@@ -271,6 +374,7 @@ export class World {
       this.emit({ type: 'reveal', sr: touched.sr, sc: touched.sc });
       this.tryCompleteSector(touched, now);
     }
+    this.save();
 
     return { revealedCount, maxDist, distances };
   }
@@ -328,6 +432,7 @@ export class World {
     cell.flagged = !cell.flagged;
     if (!cell.flagged) cell.flagWrong = false;
     else this.tryCompleteSector(sector, performance.now());
+    this.save();
     return true;
   }
 
@@ -381,6 +486,7 @@ export class World {
       sector.locked = false;
       this.tryCompleteSector(sector, performance.now());
     }
+    this.save();
     return true;
   }
 
@@ -390,6 +496,7 @@ export class World {
       sector.locked = false;
       this.tryCompleteSector(sector, performance.now());
     }
+    this.save();
   }
 
   claimVault(sr: number, sc: number, reward: number): boolean {
@@ -398,6 +505,7 @@ export class World {
     sector.vaultClaimed = true;
     this.economy.addGems(reward);
     this.emit({ type: 'gemsEarned', amount: reward });
+    this.save();
     return true;
   }
 }
