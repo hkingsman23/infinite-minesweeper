@@ -136,7 +136,7 @@ body {
   font-weight: 600;
 }
 .vault-title {
-  color: #b5891f;
+  color: #2b1d02;
 }
 
 .card-sub {
@@ -205,7 +205,15 @@ body {
 }
 
 .vault-card {
+  /* Sits on an opaque gold overlay (see renderer.ts), not the dark
+     lock/done overlays every other card sits on — needs dark text instead
+     of the base .sector-card light color to stay readable. */
   text-align: center;
+  color: #2b1d02;
+}
+.vault-card .card-sub {
+  color: #4a3410;
+  opacity: 0.85;
 }
 .vault-icon {
   font-size: 34px;
@@ -213,8 +221,9 @@ body {
   margin-bottom: 6px;
 }
 .vault-btn {
-  border-color: #d6aa36 !important;
-  background: rgba(214, 170, 54, 0.16) !important;
+  border-color: #8a6414 !important;
+  background: #fff3d6 !important;
+  color: #2b1d02 !important;
   margin-bottom: 0;
 }
 
