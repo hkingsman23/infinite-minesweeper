@@ -20,7 +20,7 @@ interface DragState {
   id: number;
 }
 
-const LONG_PRESS_MS = 450;
+const LONG_PRESS_MS = 280;
 
 interface PinchState {
   dist: number;

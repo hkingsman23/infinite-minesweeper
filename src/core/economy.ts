@@ -51,7 +51,14 @@ export class Economy {
   }
 
   recordSectorCleared(): number {
-    const REWARD = 3; // flat sector-clear reward, see GEM_ECONOMY_AND_MONETIZATION.md
+    // Flat sector-clear reward (see GEM_ECONOMY_AND_MONETIZATION.md §1.1).
+    // Lowered 3→1: at 3, and with a single tap often auto-completing several
+    // sectors at once (3× each), the balance climbed fast enough that the
+    // ~22–50 gem unlock sink stopped feeling considered. At 1 a median
+    // unlock is ~30 clears of passive earning, which keeps gems scarce and
+    // nudges players toward the free neighbour-solve path, rewarded ads, or
+    // the Gem Vault — the intended monetisation pressure.
+    const REWARD = 1;
     this.state.sectorsCleared += 1;
     this.addGems(REWARD);
     return REWARD;

@@ -29,6 +29,21 @@ function isIOS(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
 }
 
+/** Publishes the banner's on-screen footprint (its height + how far off the
+ * bottom it sits) as a CSS variable so the toast host can lift itself above
+ * it — otherwise toasts render behind the banner. 0px when hidden. offsetHeight
+ * is transform-independent, so it's valid to read even mid slide-in. */
+function updateBannerOffset() {
+  const root = document.documentElement;
+  if (!bannerEl) {
+    root.style.setProperty('--install-banner-offset', '0px');
+    return;
+  }
+  const bottomPx = parseFloat(getComputedStyle(bannerEl).bottom) || 12;
+  const offset = bannerEl.offsetHeight + bottomPx + 10 - 28; // relative to toast's 28px base gap
+  root.style.setProperty('--install-banner-offset', `${Math.max(0, offset)}px`);
+}
+
 function showBanner() {
   if (bannerEl) return;
   const el = document.createElement('div');
@@ -40,6 +55,7 @@ function showBanner() {
   `;
   document.body.appendChild(el);
   bannerEl = el;
+  updateBannerOffset();
   requestAnimationFrame(() => el.classList.add('show'));
 
   el.querySelector('.install-btn')!.addEventListener('click', async () => {
@@ -60,6 +76,7 @@ function hideBanner() {
   if (!bannerEl) return;
   const el = bannerEl;
   bannerEl = null;
+  updateBannerOffset();
   el.classList.remove('show');
   setTimeout(() => el.remove(), 250);
 }
@@ -101,6 +118,10 @@ function showIOSInstructions() {
 
 export function setupInstallPrompt() {
   if (isStandalone()) return; // already running as the installed app — nothing to prompt for
+
+  // Banner can wrap to a taller height on rotation/resize — keep the toast
+  // offset in sync so it still clears it.
+  window.addEventListener('resize', updateBannerOffset);
 
   if (isIOS()) {
     showBanner();

@@ -33,8 +33,10 @@ export class LockPanelManager {
       <p class="card-title">Sector locked</p>
       <p class="card-sub"><span class="nb-count">0</span> of 8 neighbours solved</p>
       <div class="nb-grid"></div>
-      <button class="card-btn ad-btn">${icons.play} Watch ad to unlock</button>
-      <button class="card-btn gem-btn">Unlock — <span class="price">0</span> 💎</button>
+      <div class="card-actions">
+        <button class="card-btn ad-btn">${icons.play} Watch ad</button>
+        <button class="card-btn gem-btn"><span class="price">0</span> 💎</button>
+      </div>
       <p class="card-foot">or solve all 8 surrounding sectors</p>
     `;
     el.querySelector('.ad-btn')!.addEventListener('click', (e) => {

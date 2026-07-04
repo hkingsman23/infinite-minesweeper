@@ -21,5 +21,5 @@ export function showToast(message: string) {
   setTimeout(() => {
     el.classList.remove('show');
     setTimeout(() => el.remove(), 250);
-  }, 1800);
+  }, 3200);
 }
