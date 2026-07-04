@@ -67,7 +67,7 @@ export class LockPanelManager {
       <div class="vault-icon">💰</div>
       <p class="card-title vault-title">Gem vault ready!</p>
       <p class="card-sub">You cleared a vault sector. Crack it open for a gem reward.</p>
-      <button class="card-btn vault-btn">UNLOCK ▶️</button>
+      <button class="card-btn vault-btn">${icons.play} Watch ad to collect</button>
     `;
     el.querySelector('.vault-btn')!.addEventListener('click', (e) => {
       e.stopPropagation();

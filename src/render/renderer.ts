@@ -157,18 +157,29 @@ export class Renderer {
           ctx.fillStyle = theme.lockOverlay;
           ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
         } else if (sector.isVault && sector.cleared && !sector.vaultClaimed) {
-          const pulse = 0.16 + 0.07 * Math.sin(now / 380);
-          ctx.fillStyle = `rgba(214,170,54,${pulse})`;
+          // Static, not pulsing — and opaque enough (matches doneOverlay's
+          // alpha) to keep the "Watch ad to collect" card readable against
+          // the board behind it, same reasoning as the lock/done overlays.
+          ctx.fillStyle = 'rgba(214,170,54,0.85)';
           ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-          ctx.strokeStyle = 'rgba(214,170,54,0.95)';
-          ctx.lineWidth = 2.5;
-          ctx.strokeRect(rect.x + 1.5, rect.y + 1.5, rect.w - 3, rect.h - 3);
         } else if (sector.cleared) {
           // Same dim *treatment* as a locked sector (just without the card),
           // but a neutral tone rather than lockOverlay's red — cleared means
           // done, not dangerous.
           ctx.fillStyle = theme.doneOverlay;
           ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+        }
+
+        // Gold border hint: shown the instant a sector is known to be a
+        // vault (i.e. as soon as it's generated at all — isVault is decided
+        // at generation time, so an ungenerated sector simply has no vault
+        // status yet to leak) and until it's actually claimed. Independent
+        // of the fill above so it layers over in-progress, locked, *and*
+        // cleared-ready-to-collect states alike.
+        if (sector.isVault && !sector.vaultClaimed) {
+          ctx.strokeStyle = 'rgba(214,170,54,0.95)';
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(rect.x + 1.5, rect.y + 1.5, rect.w - 3, rect.h - 3);
         }
 
         const pulseStart = this.clearPulses.get(sectorKeyStr(sr, sc));
