@@ -4,3 +4,5 @@ dist
 *.local
 *.mp4
 *.tsbuildinfo
+.vercel
+.env*
