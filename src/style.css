@@ -1,0 +1,262 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  /* Long-pressing anywhere (used for flagging) would otherwise trigger
+     iOS Safari's text-selection/callout ("Copy", "Look Up") UI, which both
+     visually interrupts the gesture and can swallow the touch entirely. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #15161a;
+}
+
+#app {
+  height: 100%;
+}
+
+.game-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#hud-host {
+  flex: none;
+}
+
+.hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #aab1be;
+}
+
+.theme-dark .hud-bar {
+  color: #9aa0ab;
+}
+
+.hud-stat b {
+  font-weight: 700;
+  color: inherit;
+}
+
+.theme-dark .hud-stat b,
+.theme-light .hud-stat b {
+  color: currentColor;
+}
+
+.hud-sep {
+  opacity: 0.5;
+}
+
+.hud-spacer {
+  flex: 1;
+}
+
+.hud-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(127, 127, 127, 0.18);
+  /* Brighter/higher-contrast than the muted .hud-bar label text — icon
+     glyphs read much worse than text at low contrast, especially at small
+     sizes on a phone screen. */
+  color: #e7e9ee;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-light .hud-btn {
+  color: #2b2e38;
+}
+.hud-btn:active {
+  transform: scale(0.94);
+}
+
+#board-frame {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+#board {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+#panel-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sector-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 236px;
+  transform-origin: top left;
+  padding: 15px 15px 13px;
+  pointer-events: none;
+}
+.sector-card .card-btn {
+  pointer-events: auto;
+}
+.sector-card {
+  /* The lock overlay behind this card is now a dark, fairly opaque tint in
+     both themes (see theme.ts lockOverlay), so card text stays light in
+     both rather than switching to dark-on-dark for the light theme. */
+  color: #e5e7ec;
+  text-align: center;
+}
+.sector-card.dismissed {
+  display: none;
+}
+
+.card-title {
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.vault-title {
+  color: #b5891f;
+}
+
+.card-sub {
+  margin: 0 0 12px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.nb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 150px;
+  margin: 0 auto 13px;
+}
+.nb-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: rgba(60, 62, 70, 0.96);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  opacity: 0.75;
+}
+.nb-center {
+  background: rgba(160, 40, 55, 0.96);
+  opacity: 1;
+}
+.nb-solved {
+  background: rgba(35, 110, 75, 0.96);
+  color: #b7f0d1;
+  opacity: 1;
+}
+.theme-dark .nb-solved {
+  color: #7cd0a0;
+}
+
+.card-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  border: 0.5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(50, 52, 60, 0.92);
+  color: #ececf0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.card-btn:active {
+  transform: scale(0.98);
+}
+
+.card-foot {
+  margin: 5px 0 0;
+  font-size: 12px;
+  opacity: 0.55;
+  text-align: center;
+}
+
+.vault-card {
+  text-align: center;
+}
+.vault-icon {
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.vault-btn {
+  border-color: #d6aa36 !important;
+  background: rgba(214, 170, 54, 0.16) !important;
+  margin-bottom: 0;
+}
+
+.gem-fly {
+  position: fixed;
+  top: 0;
+  left: 0;
+  font-size: 22px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 999;
+  white-space: nowrap;
+}
+
+#toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  z-index: 1000;
+  pointer-events: none;
+}
+.toast {
+  background: rgba(20, 20, 24, 0.94);
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
