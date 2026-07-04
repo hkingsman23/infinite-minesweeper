@@ -8,6 +8,7 @@ import { LockPanelManager } from './ui/lockPanel';
 import { Hud } from './ui/hud';
 import { playSfx } from './audio/sfx';
 import { vibrate } from './audio/haptics';
+import { setupInstallPrompt } from './ui/installPrompt';
 import { SECTOR_SIZE } from './core/types';
 import { TILE } from './render/renderer';
 
@@ -121,3 +122,5 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     });
   });
 }
+
+setupInstallPrompt();

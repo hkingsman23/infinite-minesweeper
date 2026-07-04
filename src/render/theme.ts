@@ -42,6 +42,8 @@ export const THEMES: Record<'dark' | 'light', Theme> = {
   },
 };
 
+/** Dark is the default regardless of system preference — the player can
+ * still switch to light via the HUD toggle for the current session. */
 export function detectInitialTheme(): 'dark' | 'light' {
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
