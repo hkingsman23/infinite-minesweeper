@@ -70,10 +70,7 @@ function showIOSInstructions() {
   backdrop.className = 'ios-install-modal-backdrop';
   backdrop.innerHTML = `
     <div class="ios-install-modal">
-      <div class="ios-install-header">
-        <p class="ios-install-title">Add to Home Screen</p>
-        <button class="ios-install-close" aria-label="Close">${icons.close}</button>
-      </div>
+      <p class="ios-install-title">Add to Home Screen</p>
       <div class="ios-install-row">
         <span class="ios-install-icon">${icons.share}</span>
         <p>Tap the Share button in Safari's toolbar.</p>
@@ -86,6 +83,7 @@ function showIOSInstructions() {
         <span class="ios-install-icon">${icons.device}</span>
         <p>Now you can open Infinite Minesweeper right from your home screen — even offline.</p>
       </div>
+      <button class="ios-install-close">Got it</button>
     </div>
   `;
   document.body.appendChild(backdrop);

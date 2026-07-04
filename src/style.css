@@ -350,25 +350,10 @@ body {
   transform: translateY(0) scale(1);
   opacity: 1;
 }
-.ios-install-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 22px;
-}
 .ios-install-title {
-  margin: 0;
+  margin: 0 0 22px;
   font-size: 18px;
   font-weight: 700;
-}
-.ios-install-close {
-  flex: none;
-  border: none;
-  background: transparent;
-  color: #83899a;
-  padding: 4px;
-  cursor: pointer;
-  display: flex;
 }
 .ios-install-row {
   display: flex;
@@ -393,4 +378,17 @@ body {
   align-items: center;
   justify-content: center;
   color: #ececf0;
+}
+.ios-install-close {
+  width: 100%;
+  margin-top: 22px;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  background: #4fa3e3;
+  color: #0c1a26;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
 }
