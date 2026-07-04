@@ -51,8 +51,15 @@ export function setupInstallPrompt() {
     showBanner();
   });
 
+  // Deliberately does NOT set DISMISSED_KEY here. Chrome only ever fires
+  // beforeinstallprompt when it currently believes the PWA isn't installed —
+  // and it fires it again on a later visit once it notices the app was
+  // uninstalled (there's no "appuninstalled" event; this re-fire IS the
+  // uninstall signal). Persisting a permanent flag on install would block
+  // that re-fire from ever showing the banner again after an uninstall —
+  // hiding it for *this* session is enough, since the event itself won't
+  // recur while still installed.
   window.addEventListener('appinstalled', () => {
-    localStorage.setItem(DISMISSED_KEY, '1');
     hideBanner();
   });
 }
