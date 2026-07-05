@@ -1,8 +1,10 @@
 import { generateSector } from './sectorGenerator';
 import { hashInts } from './rng';
-import { CellState, SECTOR_SIZE, Sector } from './types';
+import { CellState, DAILY_SIZE, Sector } from './types';
 
-export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v1';
+// v2: board grew from 8x8 to 24x24 (DAILY_SIZE) — bumped so a v1 save (still
+// shaped 8x8) never gets loaded and indexed as if it were 24x24.
+export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v2';
 const STORAGE_KEY = DAILY_STORAGE_KEY;
 
 /** Local calendar date, not UTC — like Wordle, the puzzle turns over at the
@@ -24,11 +26,11 @@ function dateSeed(dateStr: string): number {
   return hashInts(y, m, d, 0xda17); // fixed salt so this never collides with a worldSeed value
 }
 
-/** Fixed entry point: dead centre of the 8x8 board, same for every daily
+/** Fixed entry point: dead centre of the board, same for every daily
  * puzzle — matches the classic "click the middle first" convention and
  * gives the generator's first-sector 3x3 safe-patch treatment evenly. */
-const ENTRY_ROW = 4;
-const ENTRY_COL = 4;
+const ENTRY_ROW = Math.floor(DAILY_SIZE / 2);
+const ENTRY_COL = Math.floor(DAILY_SIZE / 2);
 
 interface StoredDaily {
   dateStr: string;
@@ -90,15 +92,32 @@ export class DailyGame {
         // Different day — carry the streak bookkeeping forward, but the
         // board itself needs regenerating fresh below.
         const game = DailyGame.generate(dateStr);
-        const prevStreak = JSON.parse(raw) as StoredDaily;
-        game.streak = prevStreak.streak;
-        game.lastCompletedDate = prevStreak.lastCompletedDate;
+        game.streak = stored.streak;
+        game.lastCompletedDate = stored.lastCompletedDate;
         return game;
       }
     } catch {
       // Fall through to a fresh generation.
     }
-    return DailyGame.generate(dateStr);
+    const game = DailyGame.generate(dateStr);
+    game.carryStreakFromLegacySave();
+    return game;
+  }
+
+  /** One-time migration for the board-size bump (see DAILY_STORAGE_KEY's v2
+   * comment): a pre-bump save is unreadable as a board (still shaped 8x8),
+   * but its streak count is worth preserving rather than silently resetting
+   * to 0 the first time a v1 player opens the game post-update. */
+  private carryStreakFromLegacySave() {
+    try {
+      const raw = localStorage.getItem('infinite-minesweeper-daily-v1');
+      if (!raw) return;
+      const legacy = JSON.parse(raw) as { streak?: number; lastCompletedDate?: string | null };
+      if (typeof legacy.streak === 'number') this.streak = legacy.streak;
+      if (legacy.lastCompletedDate !== undefined) this.lastCompletedDate = legacy.lastCompletedDate ?? null;
+    } catch {
+      // Non-fatal — worst case the streak just restarts at 0.
+    }
   }
 
   private static generate(dateStr: string): DailyGame {
@@ -112,6 +131,7 @@ export class DailyGame {
       true, // isFirstSector — gives the classic 3x3 safe-patch opening
       () => undefined, // no neighbouring sectors ever exist — standalone board
       () => false,
+      DAILY_SIZE,
     );
     return new DailyGame(dateStr, sector);
   }
@@ -153,7 +173,7 @@ export class DailyGame {
   }
 
   private cellAt(row: number, col: number): CellState | null {
-    if (row < 0 || row >= SECTOR_SIZE || col < 0 || col >= SECTOR_SIZE) return null;
+    if (row < 0 || row >= DAILY_SIZE || col < 0 || col >= DAILY_SIZE) return null;
     return this.sector.cells[row][col];
   }
 
@@ -186,8 +206,8 @@ export class DailyGame {
     }
 
     // Small bounded flood fill — same adjacent===0 cascade rule as the
-    // endless game, just clipped to the 8x8 board instead of crossing
-    // sector boundaries.
+    // endless game, just clipped to this board's fixed size instead of
+    // crossing sector boundaries.
     const queue: [number, number, number][] = [[row, col, 0]];
     const seen = new Set<string>([`${row},${col}`]);
     let revealedCount = 0;

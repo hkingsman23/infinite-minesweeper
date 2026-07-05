@@ -2,7 +2,6 @@ import { hashInts, mulberry32 } from './rng';
 import { isSolvableFrom } from './solver';
 import { CellState, MINE_DENSITY, SECTOR_SIZE, Sector, VAULT_CHANCE } from './types';
 
-const N = SECTOR_SIZE * SECTOR_SIZE;
 const MAX_ATTEMPTS = 800;
 // Floor the backoff can descend to. Heavily-explored "gap" sectors (most of
 // their border forced mine-free by already-revealed neighbours, see
@@ -11,10 +10,10 @@ const MAX_ATTEMPTS = 800;
 // want a reasonable minimum rather than crawling all the way down.
 const DENSITY_FLOOR = 0.18;
 
-function entryIndexFor(entryRow: number, entryCol: number): number {
-  const localRow = ((entryRow % SECTOR_SIZE) + SECTOR_SIZE) % SECTOR_SIZE;
-  const localCol = ((entryCol % SECTOR_SIZE) + SECTOR_SIZE) % SECTOR_SIZE;
-  return localRow * SECTOR_SIZE + localCol;
+function entryIndexFor(entryRow: number, entryCol: number, size: number): number {
+  const localRow = ((entryRow % size) + size) % size;
+  const localCol = ((entryCol % size) + size) % size;
+  return localRow * size + localCol;
 }
 
 /** True mine count for cell `idx`'s 8 neighbours, counting real mines from
@@ -22,6 +21,8 @@ function entryIndexFor(entryRow: number, entryCol: number): number {
  * sector's border — not just this sector's own mines. Neighbours that don't
  * exist yet contribute 0, which `World`'s reserved-safe mechanism (see
  * world.ts) guarantees will hold true forever once this cell is revealed.
+ * Standalone boards (globalMineAt always returning undefined) never hit the
+ * `external` branch at all, so every cell's count is just its own mines.
  *
  * Also returns `external`: the portion of each cell's count that comes from
  * an already-generated neighbouring sector rather than this sector's own
@@ -32,26 +33,28 @@ function computeAdjacent(
   mines: boolean[],
   sr: number,
   sc: number,
+  size: number,
   globalMineAt: (row: number, col: number) => boolean | undefined,
 ): { adjacent: number[]; external: number[] } {
-  const adjacent = new Array<number>(N);
-  const external = new Array<number>(N).fill(0);
-  for (let i = 0; i < N; i++) {
+  const n = size * size;
+  const adjacent = new Array<number>(n);
+  const external = new Array<number>(n).fill(0);
+  for (let i = 0; i < n; i++) {
     if (mines[i]) {
       adjacent[i] = -1;
       continue;
     }
-    const row = Math.floor(i / SECTOR_SIZE);
-    const col = i % SECTOR_SIZE;
+    const row = Math.floor(i / size);
+    const col = i % size;
     let count = 0;
     for (let dr = -1; dr <= 1; dr++) {
       for (let dc = -1; dc <= 1; dc++) {
         if (dr === 0 && dc === 0) continue;
         const nr = row + dr;
         const nc = col + dc;
-        if (nr >= 0 && nr < SECTOR_SIZE && nc >= 0 && nc < SECTOR_SIZE) {
-          if (mines[nr * SECTOR_SIZE + nc]) count++;
-        } else if (globalMineAt(sr * SECTOR_SIZE + nr, sc * SECTOR_SIZE + nc) === true) {
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+          if (mines[nr * size + nc]) count++;
+        } else if (globalMineAt(sr * size + nr, sc * size + nc) === true) {
           count++;
           external[i]++;
         }
@@ -63,11 +66,17 @@ function computeAdjacent(
 }
 
 /**
- * Generates one 8x8 sector's mine layout, deterministic from (worldSeed, sr, sc),
+ * Generates one sector's mine layout, deterministic from (worldSeed, sr, sc),
  * rejecting any layout that isn't solvable via pure logical deduction from the
  * given entry cell (see solver.ts) — this is the "no-guess" guarantee. Retries
  * with a fresh shuffle on rejection; backs off mine density if it can't find a
  * solvable layout within MAX_ATTEMPTS (keeps generation from ever hanging).
+ *
+ * `size` defaults to SECTOR_SIZE (8) — the endless mode's per-sector grid,
+ * stitched together via `globalMineAt`/`isReservedSafe` as the player
+ * explores (see world.ts). The daily challenge instead generates a single
+ * larger standalone board (`globalMineAt` always undefined, `isReservedSafe`
+ * always false) by passing its own `size`.
  *
  * Adjacency numbers are computed *globally*: a border cell's count includes
  * real mines from any neighbouring sector that already exists, not just this
@@ -87,15 +96,17 @@ export function generateSector(
   isFirstSector: boolean,
   globalMineAt: (row: number, col: number) => boolean | undefined,
   isReservedSafe: (row: number, col: number) => boolean,
+  size: number = SECTOR_SIZE,
 ): Sector {
-  const entryIdx = entryIndexFor(entryRow, entryCol);
+  const n = size * size;
+  const entryIdx = entryIndexFor(entryRow, entryCol, size);
   const baseSeed = hashInts(worldSeed, sr, sc);
 
   const forcedSafeIdx: number[] = [];
-  for (let i = 0; i < N; i++) {
-    const row = Math.floor(i / SECTOR_SIZE);
-    const col = i % SECTOR_SIZE;
-    if (isReservedSafe(sr * SECTOR_SIZE + row, sc * SECTOR_SIZE + col)) forcedSafeIdx.push(i);
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / size);
+    const col = i % size;
+    if (isReservedSafe(sr * size + row, sc * size + col)) forcedSafeIdx.push(i);
   }
 
   let mines: boolean[] = [];
@@ -106,29 +117,29 @@ export function generateSector(
 
   for (; attempts < MAX_ATTEMPTS; attempts++) {
     const rnd = mulberry32(hashInts(baseSeed, attempts));
-    mines = new Array(N).fill(false);
-    for (let i = 0; i < N; i++) mines[i] = rnd() < density;
+    mines = new Array(n).fill(false);
+    for (let i = 0; i < n; i++) mines[i] = rnd() < density;
 
     // Never place a mine on the entry cell; on the very first sector of a game,
     // clear a 3x3 safe patch around the entry cell (classic first-click safety).
     mines[entryIdx] = false;
     if (isFirstSector) {
-      const er = Math.floor(entryIdx / SECTOR_SIZE);
-      const ec = entryIdx % SECTOR_SIZE;
+      const er = Math.floor(entryIdx / size);
+      const ec = entryIdx % size;
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
           const nr = er + dr;
           const nc = ec + dc;
-          if (nr >= 0 && nr < SECTOR_SIZE && nc >= 0 && nc < SECTOR_SIZE) {
-            mines[nr * SECTOR_SIZE + nc] = false;
+          if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+            mines[nr * size + nc] = false;
           }
         }
       }
     }
     for (const idx of forcedSafeIdx) mines[idx] = false;
 
-    ({ adjacent, external } = computeAdjacent(mines, sr, sc, globalMineAt));
-    if (isSolvableFrom(mines, adjacent, external, entryIdx)) break;
+    ({ adjacent, external } = computeAdjacent(mines, sr, sc, size, globalMineAt));
+    if (isSolvableFrom(mines, adjacent, external, entryIdx, size)) break;
     // Progressive back-off: the no-guess constraint makes higher densities
     // exponentially harder to satisfy, so ease off gradually every 40 attempts
     // rather than once — this reliably converges on a solvable board instead
@@ -140,10 +151,10 @@ export function generateSector(
   const isVault = !isFirstSector && vaultRoll < VAULT_CHANCE;
 
   const cells: CellState[][] = [];
-  for (let r = 0; r < SECTOR_SIZE; r++) {
+  for (let r = 0; r < size; r++) {
     const row: CellState[] = [];
-    for (let c = 0; c < SECTOR_SIZE; c++) {
-      const idx = r * SECTOR_SIZE + c;
+    for (let c = 0; c < size; c++) {
+      const idx = r * size + c;
       row.push({
         mine: mines[idx],
         // Best-known value as of generation time; World.reveal() overwrites

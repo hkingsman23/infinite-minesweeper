@@ -1,7 +1,7 @@
 import { Camera } from './camera';
 import { drawEmoji } from './emoji';
 import { Theme } from './theme';
-import { Sector, SECTOR_SIZE, sectorKeyStr } from '../core/types';
+import { DAILY_SIZE, Sector, SECTOR_SIZE, sectorKeyStr } from '../core/types';
 import { World } from '../core/world';
 
 const TILE = 32;
@@ -30,7 +30,7 @@ const CLEAR_PULSE_MS = 550;
  * function of viewport size, no camera involved. */
 export function dailyBoardLayout(viewportW: number, viewportH: number) {
   const size = Math.min(viewportW, viewportH) * 0.86;
-  const ts = size / SECTOR_SIZE;
+  const ts = size / DAILY_SIZE;
   const originX = (viewportW - size) / 2;
   const originY = (viewportH - size) / 2;
   return { size, ts, originX, originY };
@@ -244,7 +244,7 @@ export class Renderer {
     }
   }
 
-  /** Renders the daily challenge's single fixed 8x8 board, centred in the
+  /** Renders the daily challenge's single fixed board, centred in the
    * viewport with no camera/pan — deliberately a separate, much simpler path
    * from draw() rather than reusing it: draw() always paints a covered-tile
    * placeholder for any not-yet-generated coordinate in view (correct for
@@ -273,8 +273,8 @@ export class Renderer {
     ctx.fillRect(originX, originY, size + 0.5, size + 0.5);
     const gridPath = new Path2D();
 
-    for (let r = 0; r < SECTOR_SIZE; r++) {
-      for (let c = 0; c < SECTOR_SIZE; c++) {
+    for (let r = 0; r < DAILY_SIZE; r++) {
+      for (let c = 0; c < DAILY_SIZE; c++) {
         const cell = sector.cells[r][c];
         const sx = originX + c * ts;
         const sy = originY + r * ts;

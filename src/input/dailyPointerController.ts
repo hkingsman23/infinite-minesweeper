@@ -1,6 +1,6 @@
 import { dailyBoardLayout } from '../render/renderer';
 import { DailyGame } from '../core/dailyGame';
-import { SECTOR_SIZE } from '../core/types';
+import { DAILY_SIZE } from '../core/types';
 import { playSfx } from '../audio/sfx';
 import { vibrate } from '../audio/haptics';
 import { showToast } from '../ui/toast';
@@ -44,7 +44,7 @@ export class DailyPointerController {
     const { ts, originX, originY } = dailyBoardLayout(rect.width, rect.height);
     const col = Math.floor((x - originX) / ts);
     const row = Math.floor((y - originY) / ts);
-    if (row < 0 || row >= SECTOR_SIZE || col < 0 || col >= SECTOR_SIZE) return null;
+    if (row < 0 || row >= DAILY_SIZE || col < 0 || col >= DAILY_SIZE) return null;
     return { row, col };
   }
 
