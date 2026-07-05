@@ -4,7 +4,7 @@ export const SECTOR_SIZE = 8;
 // infinite sector grid — this is its own fixed size, unrelated to
 // SECTOR_SIZE. Shared between dailyGame.ts (generation/bounds), the renderer,
 // and the daily pointer controller so all three stay in lockstep.
-export const DAILY_SIZE = 24;
+export const DAILY_SIZE = 16;
 // Nominal starting density fed to the generator's retry loop — the no-guess
 // solver constraint means actual placed density converges to a ceiling well
 // below this regardless of how much higher it's set (see sectorGenerator.ts);

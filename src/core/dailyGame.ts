@@ -2,6 +2,8 @@ import { generateSector } from './sectorGenerator';
 import { hashInts } from './rng';
 import { CellState, DAILY_SIZE, Sector } from './types';
 
+// v4: board resized from 24x24 to 16x16 (DAILY_SIZE) — bumped so a v3 save
+// (still shaped 24x24) never gets loaded and indexed as if it were 16x16.
 // v3: startedAt/completedAt switched from performance.now() (relative to
 // each page load's own navigation start, meaningless once persisted across a
 // reload) to Date.now() (a real wall-clock epoch, safe to persist) — bumped
@@ -9,7 +11,7 @@ import { CellState, DAILY_SIZE, Sector } from './types';
 // fresh page's Date.now() and produce a nonsense multi-decade elapsed time.
 // v2: board grew from 8x8 to 24x24 (DAILY_SIZE) — bumped so a v1 save (still
 // shaped 8x8) never gets loaded and indexed as if it were 24x24.
-export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v3';
+export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v4';
 const STORAGE_KEY = DAILY_STORAGE_KEY;
 
 /** Local calendar date, not UTC — like Wordle, the puzzle turns over at the
@@ -116,7 +118,10 @@ export class DailyGame {
    * opens the game post-update. */
   private carryStreakFromLegacySave() {
     try {
-      const raw = localStorage.getItem('infinite-minesweeper-daily-v2') ?? localStorage.getItem('infinite-minesweeper-daily-v1');
+      const raw =
+        localStorage.getItem('infinite-minesweeper-daily-v3') ??
+        localStorage.getItem('infinite-minesweeper-daily-v2') ??
+        localStorage.getItem('infinite-minesweeper-daily-v1');
       if (!raw) return;
       const legacy = JSON.parse(raw) as { streak?: number; lastCompletedDate?: string | null };
       if (typeof legacy.streak === 'number') this.streak = legacy.streak;
