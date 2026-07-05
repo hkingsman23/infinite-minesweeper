@@ -1,4 +1,4 @@
-import { Camera } from './camera';
+import { Camera, MAX_ZOOM, MIN_ZOOM } from './camera';
 import { drawEmoji } from './emoji';
 import { Theme } from './theme';
 import { DAILY_SIZE, Sector, SECTOR_SIZE, sectorKeyStr } from '../core/types';
@@ -25,15 +25,18 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 const CLEAR_PULSE_MS = 550;
 
-/** Shared by Renderer.drawDaily and the daily input controller so the two
- * can never drift out of sync — the board's on-screen box is a pure
- * function of viewport size, no camera involved. */
-export function dailyBoardLayout(viewportW: number, viewportH: number) {
-  const size = Math.min(viewportW, viewportH) * 0.86;
-  const ts = size / DAILY_SIZE;
-  const originX = (viewportW - size) / 2;
-  const originY = (viewportH - size) / 2;
-  return { size, ts, originX, originY };
+/** The daily board's own world-pixel extent (TILE-sized cells, DAILY_SIZE on
+ * a side) — shared by Renderer.drawDaily and the daily input controller so
+ * both agree on the same camera-clamp bounds and hit-testing math. */
+export const DAILY_WORLD_SIZE = DAILY_SIZE * TILE;
+
+/** Zoom/pan that frames the whole board within ~86% of the smaller viewport
+ * dimension — the same "fits nicely, centred" look the board always opened
+ * with before pan/zoom existed, just expressed as a starting camera state
+ * instead of a fixed layout. */
+export function dailyInitialZoom(viewportW: number, viewportH: number): number {
+  const fit = (Math.min(viewportW, viewportH) * 0.86) / DAILY_WORLD_SIZE;
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fit));
 }
 
 export class Renderer {
@@ -244,17 +247,15 @@ export class Renderer {
     }
   }
 
-  /** Renders the daily challenge's single fixed board, centred in the
-   * viewport with no camera/pan — deliberately a separate, much simpler path
-   * from draw() rather than reusing it: draw() always paints a covered-tile
-   * placeholder for any not-yet-generated coordinate in view (correct for
-   * the infinite endless mode, where "not generated yet" just means
-   * "haven't scrolled/cascaded there"), which would be wrong here — outside
-   * this one bounded board there's no more puzzle, so it should read as
-   * empty, not more covered ground. Reuses the same per-cell drawing (and
+  /** Renders the daily challenge's single fixed board — pannable/zoomable via
+   * `camera`, same as endless mode's draw(), just against a bounded
+   * DAILY_SIZE x DAILY_SIZE grid instead of an infinite one, so (unlike
+   * draw()) there's no not-yet-generated placeholder to paint outside it —
+   * outside this one bounded board there's no more puzzle, so it should read
+   * as empty, not more covered ground. Reuses the same per-cell drawing (and
    * thus the exact same flip animation, bevel, and number/emoji rendering)
    * via drawCap/drawFace/drawRevealed. */
-  drawDaily(sector: Sector, now: number, theme: Theme) {
+  drawDaily(sector: Sector, camera: Camera, now: number, theme: Theme) {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.viewportW, this.viewportH);
     ctx.fillStyle = theme.bg;
@@ -267,17 +268,20 @@ export class Renderer {
     ctx.save();
     ctx.translate(shakeX, shakeY);
 
-    const { size, ts, originX, originY } = dailyBoardLayout(this.viewportW, this.viewportH);
+    const ts = TILE * camera.zoom;
+    const topLeft = camera.worldToScreen(0, 0);
+    const boardSize = DAILY_SIZE * ts;
 
     ctx.fillStyle = theme.slot;
-    ctx.fillRect(originX, originY, size + 0.5, size + 0.5);
+    ctx.fillRect(topLeft.x, topLeft.y, boardSize + 0.5, boardSize + 0.5);
     const gridPath = new Path2D();
 
     for (let r = 0; r < DAILY_SIZE; r++) {
       for (let c = 0; c < DAILY_SIZE; c++) {
         const cell = sector.cells[r][c];
-        const sx = originX + c * ts;
-        const sy = originY + r * ts;
+        const p = camera.worldToScreen(c * TILE, r * TILE);
+        const sx = p.x;
+        const sy = p.y;
         gridPath.rect(sx + 0.5, sy + 0.5, ts - 1, ts - 1);
 
         if (!cell.revealed) {
@@ -308,7 +312,7 @@ export class Renderer {
 
     ctx.strokeStyle = theme.sector;
     ctx.lineWidth = 2;
-    ctx.strokeRect(originX, originY, size, size);
+    ctx.strokeRect(topLeft.x, topLeft.y, boardSize, boardSize);
 
     ctx.restore();
 

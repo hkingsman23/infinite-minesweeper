@@ -39,6 +39,11 @@ function dateSeed(dateStr: string): number {
 const ENTRY_ROW = Math.floor(DAILY_SIZE / 2);
 const ENTRY_COL = Math.floor(DAILY_SIZE / 2);
 
+/** Every daily puzzle has exactly this many mines — a fixed, comparable
+ * number across days (like a fixed word length in Wordle), rather than
+ * whatever a density roll happens to land on. */
+const DAILY_MINE_COUNT = 60;
+
 interface StoredDaily {
   dateStr: string;
   sector: {
@@ -143,6 +148,7 @@ export class DailyGame {
       () => undefined, // no neighbouring sectors ever exist — standalone board
       () => false,
       DAILY_SIZE,
+      DAILY_MINE_COUNT,
     );
     return new DailyGame(dateStr, sector);
   }

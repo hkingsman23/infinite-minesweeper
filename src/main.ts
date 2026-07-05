@@ -15,7 +15,7 @@ import { playSfx } from './audio/sfx';
 import { vibrate } from './audio/haptics';
 import { setupInstallPrompt } from './ui/installPrompt';
 import { SECTOR_SIZE } from './core/types';
-import { TILE } from './render/renderer';
+import { DAILY_WORLD_SIZE, TILE, dailyInitialZoom } from './render/renderer';
 
 const app = document.getElementById('app')!;
 app.innerHTML = `
@@ -115,6 +115,11 @@ window.addEventListener('beforeunload', saveCameraState);
 const renderer = new Renderer(ctx, window.innerWidth, window.innerHeight);
 const lockPanels = new LockPanelManager(panelHost, world, renderer);
 
+const dailyCamera = new Camera(window.innerWidth, window.innerHeight);
+dailyCamera.x = DAILY_WORLD_SIZE / 2;
+dailyCamera.y = DAILY_WORLD_SIZE / 2;
+dailyCamera.setZoomImmediate(dailyInitialZoom(window.innerWidth, window.innerHeight));
+
 function resize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -125,6 +130,7 @@ function resize() {
   canvas.height = h * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   camera.resize(w, h);
+  dailyCamera.resize(w, h);
   renderer.resize(w, h);
 }
 window.addEventListener('resize', resize);
@@ -174,7 +180,7 @@ const pointerController = new PointerController(canvas, camera, world, Infinity,
 const dailyGame = DailyGame.today();
 let dailyWasComplete = dailyGame.isComplete();
 const dailyView = new DailyView(dailyHeaderHost, dailyGame, () => exitDaily());
-const dailyPointerController = new DailyPointerController(canvas, dailyGame, (_revealedCount, hitMine) => {
+const dailyPointerController = new DailyPointerController(canvas, dailyCamera, dailyGame, (_revealedCount, hitMine) => {
   if (hitMine) {
     renderer.triggerMineFlash();
   } else if (!dailyWasComplete && dailyGame.isComplete()) {
@@ -215,7 +221,8 @@ function frame(now: number) {
     renderer.draw(world, camera, THEMES[theme], now);
     lockPanels.update(camera);
   } else {
-    renderer.drawDaily(dailyGame.getSector(), now, THEMES[theme]);
+    dailyCamera.update(now, DAILY_WORLD_SIZE, DAILY_WORLD_SIZE);
+    renderer.drawDaily(dailyGame.getSector(), dailyCamera, now, THEMES[theme]);
     dailyView.update();
   }
   requestAnimationFrame(frame);
