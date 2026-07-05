@@ -249,4 +249,22 @@ export class DailyGame {
     if (this.startedAt == null) return 0;
     return (this.completedAt ?? now) - this.startedAt;
   }
+
+  /** Classic minesweeper flag counter: total mines minus flags currently
+   * placed. Recomputed from the board each call rather than tracked
+   * incrementally — the board is only 64 cells, so scanning it every frame
+   * is cheap, and this way it can never drift out of sync with the actual
+   * cell state. Goes negative if the player over-flags, same as the classic
+   * game. */
+  minesRemaining(): number {
+    let total = 0;
+    let flagged = 0;
+    for (const row of this.sector.cells) {
+      for (const c of row) {
+        if (c.mine) total++;
+        if (c.flagged) flagged++;
+      }
+    }
+    return total - flagged;
+  }
 }

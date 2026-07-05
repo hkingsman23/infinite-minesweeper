@@ -35,7 +35,8 @@ export class DailyView {
       <button class="hud-btn daily-back" aria-label="Back to endless">${icons.back}</button>
       <span class="daily-date">Daily · ${this.game.dateStr}</span>
       <span class="daily-spacer"></span>
-      <span class="daily-stat">${icons.flag}${this.game.mistakes}</span>
+      <span class="daily-stat">${icons.flag}${this.game.minesRemaining()}</span>
+      <span class="daily-stat">💥${this.game.mistakes}</span>
       <span class="daily-stat">${icons.clock}${formatTime(elapsed)}</span>
     `;
     this.headerEl.querySelector('.daily-back')!.addEventListener('click', () => this.onExit());
