@@ -13,6 +13,7 @@ export class Hud {
     onThemeToggle: () => void,
     onRecenter: () => void,
     onOpenDaily: () => void,
+    onResetAll: () => void,
     initialIsDark: boolean,
   ) {
     this.isDark = initialIsDark;
@@ -25,6 +26,7 @@ export class Hud {
         <button class="hud-btn daily-btn" aria-label="Daily challenge">${icons.calendar}</button>
         <button class="hud-btn theme-btn" aria-label="Toggle theme"></button>
         <button class="hud-btn recenter-btn" aria-label="Recenter">${icons.crosshair}</button>
+        <button class="hud-btn reset-btn" aria-label="Start fresh">${icons.refresh}</button>
       </div>
     `;
     this.gemEl = host.querySelector('.hud-gems')!;
@@ -33,6 +35,7 @@ export class Hud {
     this.themeBtn.addEventListener('click', onThemeToggle);
     host.querySelector('.recenter-btn')!.addEventListener('click', onRecenter);
     host.querySelector('.daily-btn')!.addEventListener('click', onOpenDaily);
+    host.querySelector('.reset-btn')!.addEventListener('click', onResetAll);
     world.economy.onChange(() => this.refresh());
     this.updateThemeIcon();
     this.refresh();

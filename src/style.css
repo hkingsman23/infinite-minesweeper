@@ -503,3 +503,61 @@ body {
 .daily-close-btn {
   margin-bottom: 0;
 }
+
+/* Reset-everything confirmation (see ui/resetConfirm.ts) */
+.reset-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.reset-confirm-backdrop.show {
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 1;
+}
+.reset-confirm {
+  width: 100%;
+  max-width: 320px;
+  background: #1e1f24;
+  color: #ececf0;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(8px) scale(0.98);
+  transition:
+    transform 200ms ease,
+    opacity 200ms ease;
+  opacity: 0;
+}
+.reset-confirm-backdrop.show .reset-confirm {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.reset-confirm-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+.reset-confirm-body {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.75;
+  text-align: center;
+}
+.reset-confirm-cancel {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.reset-confirm-danger {
+  background: #e5342e !important;
+  border-color: #e5342e !important;
+  color: #fff !important;
+  margin-bottom: 0;
+}

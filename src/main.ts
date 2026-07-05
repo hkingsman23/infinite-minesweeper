@@ -1,6 +1,7 @@
 import './style.css';
-import { World } from './core/world';
-import { DailyGame } from './core/dailyGame';
+import { World, WORLD_STORAGE_KEY } from './core/world';
+import { DailyGame, DAILY_STORAGE_KEY } from './core/dailyGame';
+import { ECONOMY_STORAGE_KEY } from './core/economy';
 import { Camera } from './render/camera';
 import { Renderer } from './render/renderer';
 import { THEMES, detectInitialTheme } from './render/theme';
@@ -9,6 +10,7 @@ import { DailyPointerController } from './input/dailyPointerController';
 import { LockPanelManager } from './ui/lockPanel';
 import { Hud } from './ui/hud';
 import { DailyView } from './ui/dailyView';
+import { showResetConfirm } from './ui/resetConfirm';
 import { playSfx } from './audio/sfx';
 import { vibrate } from './audio/haptics';
 import { setupInstallPrompt } from './ui/installPrompt';
@@ -60,7 +62,14 @@ function loadCameraState(): { x: number; y: number; zoom: number } | null {
   }
 }
 
+// Flipped just before resetAll() reloads the page — beforeunload fires as
+// part of that same reload and would otherwise re-save the (about-to-be-
+// stale) in-memory camera position right after resetAll() clears it,
+// silently undoing that one piece of the wipe.
+let resetting = false;
+
 function saveCameraState() {
+  if (resetting) return;
   try {
     localStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify({ x: camera.x, y: camera.y, zoom: camera.zoom }));
   } catch {
@@ -72,6 +81,23 @@ const savedCamera = loadCameraState();
 camera.x = savedCamera?.x ?? CENTER_PX;
 camera.y = savedCamera?.y ?? CENTER_PX;
 if (savedCamera) camera.setZoomImmediate(savedCamera.zoom);
+
+/** Wipes every piece of saved progress (economy, board, camera position,
+ * daily streak) and reloads so everything reinitializes from scratch —
+ * simplest way to guarantee no in-memory state survives alongside the
+ * cleared storage. Gated behind a confirmation modal (see ui/resetConfirm.ts)
+ * since it's destructive and irreversible. */
+function resetAll() {
+  resetting = true;
+  for (const key of [ECONOMY_STORAGE_KEY, WORLD_STORAGE_KEY, CAMERA_STORAGE_KEY, DAILY_STORAGE_KEY]) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Non-fatal — matches the tolerance every save()/load() here already has.
+    }
+  }
+  window.location.reload();
+}
 
 // visibilitychange fires reliably on mobile (backgrounding/locking), unlike
 // beforeunload which mobile OSes can skip entirely when a tab is killed;
@@ -115,6 +141,7 @@ const hud = new Hud(
     camera.setZoomAround(1, window.innerWidth / 2, window.innerHeight / 2, Infinity, Infinity);
   },
   () => enterDaily(),
+  () => showResetConfirm(resetAll),
   theme === 'dark',
 );
 

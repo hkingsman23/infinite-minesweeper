@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'infinite-minesweeper-economy-v1';
+export const ECONOMY_STORAGE_KEY = 'infinite-minesweeper-economy-v1';
+const STORAGE_KEY = ECONOMY_STORAGE_KEY;
 
 export interface EconomyState {
   gems: number;

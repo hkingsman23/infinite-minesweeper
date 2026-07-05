@@ -2,7 +2,8 @@ import { generateSector } from './sectorGenerator';
 import { hashInts } from './rng';
 import { CellState, SECTOR_SIZE, Sector } from './types';
 
-const STORAGE_KEY = 'infinite-minesweeper-daily-v1';
+export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v1';
+const STORAGE_KEY = DAILY_STORAGE_KEY;
 
 /** Local calendar date, not UTC — like Wordle, the puzzle turns over at the
  * player's own midnight rather than a shared UTC instant. That means two

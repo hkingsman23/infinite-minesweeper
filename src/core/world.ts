@@ -15,7 +15,7 @@ export type RevealEvent =
   | { type: 'gemsEarned'; amount: number }
   | { type: 'sectorAutoUnlocked'; sr: number; sc: number };
 
-const WORLD_STORAGE_KEY = 'infinite-minesweeper-world-v1';
+export const WORLD_STORAGE_KEY = 'infinite-minesweeper-world-v1';
 
 interface SerializedCell {
   mine: boolean;
