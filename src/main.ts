@@ -119,6 +119,11 @@ const dailyCamera = new Camera(window.innerWidth, window.innerHeight);
 dailyCamera.x = DAILY_WORLD_SIZE / 2;
 dailyCamera.y = DAILY_WORLD_SIZE / 2;
 dailyCamera.setZoomImmediate(dailyInitialZoom(window.innerWidth, window.innerHeight));
+// Keeps at least one tile's worth of breathing room past the board edge
+// when zoomed/panned in fully — otherwise the last row/column of tiles
+// could end up flush against the screen edge, unlike the endless board
+// which never runs out of world to keep panning into.
+dailyCamera.panMargin = TILE;
 
 function resize() {
   const w = window.innerWidth;

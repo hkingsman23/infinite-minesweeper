@@ -13,6 +13,12 @@ export class Camera {
   // Set by PointerController while a finger/pointer is actively dragging —
   // update()'s inertia-coast branch is skipped in that window (see below).
   dragging = false;
+  // How far past the world's own edge clamp() lets the camera pan, in world
+  // units — 0 (endless mode's default) means panning stops exactly at the
+  // world edge. The daily challenge sets this to one tile's width so its
+  // bounded board always keeps a little breathing room from the screen edge
+  // instead of the last row/column butting right up against it.
+  panMargin = 0;
 
   constructor(
     private viewportW: number,
@@ -27,8 +33,9 @@ export class Camera {
   clamp(worldW: number, worldH: number) {
     const hw = this.viewportW / 2 / this.zoom;
     const hh = this.viewportH / 2 / this.zoom;
-    this.x = worldW < 2 * hw ? worldW / 2 : Math.min(Math.max(this.x, hw), worldW - hw);
-    this.y = worldH < 2 * hh ? worldH / 2 : Math.min(Math.max(this.y, hh), worldH - hh);
+    const m = this.panMargin;
+    this.x = worldW < 2 * hw ? worldW / 2 : Math.min(Math.max(this.x, hw - m), worldW - hw + m);
+    this.y = worldH < 2 * hh ? worldH / 2 : Math.min(Math.max(this.y, hh - m), worldH - hh + m);
   }
 
   setZoomAround(nz: number, px: number, py: number, worldW: number, worldH: number) {
