@@ -216,7 +216,7 @@ function frame(now: number) {
     lockPanels.update(camera);
   } else {
     renderer.drawDaily(dailyGame.getSector(), now, THEMES[theme]);
-    dailyView.update(now);
+    dailyView.update();
   }
   requestAnimationFrame(frame);
 }

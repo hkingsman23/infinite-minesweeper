@@ -2,9 +2,14 @@ import { generateSector } from './sectorGenerator';
 import { hashInts } from './rng';
 import { CellState, DAILY_SIZE, Sector } from './types';
 
+// v3: startedAt/completedAt switched from performance.now() (relative to
+// each page load's own navigation start, meaningless once persisted across a
+// reload) to Date.now() (a real wall-clock epoch, safe to persist) — bumped
+// so a v2 save's old-style timestamps never get subtracted against a
+// fresh page's Date.now() and produce a nonsense multi-decade elapsed time.
 // v2: board grew from 8x8 to 24x24 (DAILY_SIZE) — bumped so a v1 save (still
 // shaped 8x8) never gets loaded and indexed as if it were 24x24.
-export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v2';
+export const DAILY_STORAGE_KEY = 'infinite-minesweeper-daily-v3';
 const STORAGE_KEY = DAILY_STORAGE_KEY;
 
 /** Local calendar date, not UTC — like Wordle, the puzzle turns over at the
@@ -104,13 +109,14 @@ export class DailyGame {
     return game;
   }
 
-  /** One-time migration for the board-size bump (see DAILY_STORAGE_KEY's v2
-   * comment): a pre-bump save is unreadable as a board (still shaped 8x8),
-   * but its streak count is worth preserving rather than silently resetting
-   * to 0 the first time a v1 player opens the game post-update. */
+  /** One-time migration for a storage-key bump (see DAILY_STORAGE_KEY's
+   * comments): a pre-bump save is unreadable as a board (either the wrong
+   * shape, or the wrong timestamp semantics), but its streak count is worth
+   * preserving rather than silently resetting to 0 the first time a player
+   * opens the game post-update. */
   private carryStreakFromLegacySave() {
     try {
-      const raw = localStorage.getItem('infinite-minesweeper-daily-v1');
+      const raw = localStorage.getItem('infinite-minesweeper-daily-v2') ?? localStorage.getItem('infinite-minesweeper-daily-v1');
       if (!raw) return;
       const legacy = JSON.parse(raw) as { streak?: number; lastCompletedDate?: string | null };
       if (typeof legacy.streak === 'number') this.streak = legacy.streak;
@@ -189,18 +195,24 @@ export class DailyGame {
    * gem/ad economy to fairly gate a shared daily puzzle behind (see
    * dailyGame.ts module doc). Instead it's just revealed as a mistake and
    * play continues on the same board, so the final score (time + mistake
-   * count) is what's comparable across players, like a Wordle guess count. */
+   * count) is what's comparable across players, like a Wordle guess count.
+   *
+   * `now` here is an *animation* clock (performance.now(), matching the
+   * rAF-driven flip timing elsewhere) — it never gets persisted. Elapsed
+   * play time is tracked separately via startedAt/completedAt, which use
+   * Date.now() instead precisely because they DO get persisted and need to
+   * survive a reload (see getElapsedMs). */
   reveal(row: number, col: number, now: number): { revealedCount: number; hitMine: boolean } | null {
     if (this.isComplete()) return null;
     const cell = this.cellAt(row, col);
     if (!cell || cell.revealed || cell.flagged) return null;
-    if (this.startedAt == null) this.startedAt = now;
+    if (this.startedAt == null) this.startedAt = Date.now();
 
     if (cell.mine) {
       this.revealCell(cell, now);
       cell.exploded = true;
       this.mistakes++;
-      this.checkComplete(now);
+      this.checkComplete();
       this.save();
       return { revealedCount: 1, hitMine: true };
     }
@@ -235,7 +247,7 @@ export class DailyGame {
       }
     }
 
-    this.checkComplete(now);
+    this.checkComplete();
     this.save();
     return { revealedCount, hitMine: false };
   }
@@ -249,10 +261,10 @@ export class DailyGame {
     return true;
   }
 
-  private checkComplete(now: number) {
+  private checkComplete() {
     const allSafeRevealed = this.sector.cells.flat().every((c) => c.mine || c.revealed);
     if (!allSafeRevealed) return;
-    this.completedAt = now;
+    this.completedAt = Date.now();
     this.sector.cleared = true;
 
     if (this.lastCompletedDate) {
@@ -265,9 +277,13 @@ export class DailyGame {
     this.lastCompletedDate = this.dateStr;
   }
 
-  getElapsedMs(now: number): number {
+  /** startedAt/completedAt are Date.now()-based (see reveal()'s doc comment),
+   * so this reads the wall clock directly rather than taking a caller-
+   * supplied `now` — there's no legitimate performance.now() value that
+   * could be subtracted against them correctly. */
+  getElapsedMs(): number {
     if (this.startedAt == null) return 0;
-    return (this.completedAt ?? now) - this.startedAt;
+    return (this.completedAt ?? Date.now()) - this.startedAt;
   }
 
   /** Classic minesweeper flag counter: total mines minus flags currently

@@ -25,12 +25,12 @@ export class DailyView {
     this.headerEl = document.createElement('div');
     this.headerEl.className = 'daily-header';
     this.host.appendChild(this.headerEl);
-    this.renderHeader(performance.now());
+    this.renderHeader();
     if (game.isComplete()) this.showResults();
   }
 
-  private renderHeader(now: number) {
-    const elapsed = this.game.getElapsedMs(now);
+  private renderHeader() {
+    const elapsed = this.game.getElapsedMs();
     this.headerEl.innerHTML = `
       <button class="hud-btn daily-back" aria-label="Back to endless">${icons.back}</button>
       <span class="daily-date">Daily · ${this.game.dateStr}</span>
@@ -44,21 +44,20 @@ export class DailyView {
 
   /** Call every frame — cheaply re-renders the live timer/mistake counters,
    * and shows the results modal exactly once the moment completion flips. */
-  update(now: number) {
+  update() {
     if (this.game.isComplete()) {
       if (!this.modalEl) {
-        this.renderHeader(now);
+        this.renderHeader();
         this.showResults();
       }
       return;
     }
-    this.renderHeader(now);
+    this.renderHeader();
   }
 
   private showResults() {
     if (this.modalEl) return;
-    const now = performance.now();
-    const elapsed = this.game.getElapsedMs(now);
+    const elapsed = this.game.getElapsedMs();
     const shareText = this.buildShareText(elapsed);
 
     const backdrop = document.createElement('div');
