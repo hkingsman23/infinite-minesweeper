@@ -148,19 +148,19 @@ body {
 .nb-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  width: 186px;
+  gap: 6px;
+  width: 150px;
   margin: 0 auto 13px;
 }
 .nb-cell {
   aspect-ratio: 1;
-  border-radius: 9px;
+  border-radius: 8px;
   background: rgba(60, 62, 70, 0.96);
   border: 0.5px solid rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 18px;
   opacity: 0.75;
 }
 .nb-center {
@@ -176,18 +176,14 @@ body {
   color: #7cd0a0;
 }
 
-.card-actions {
-  display: flex;
-  gap: 8px;
-}
 .card-btn {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 10px 8px;
+  gap: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
   border-radius: 10px;
   border: 0.5px solid rgba(255, 255, 255, 0.22);
   background: rgba(50, 52, 60, 0.92);
@@ -196,7 +192,6 @@ body {
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
-  white-space: nowrap;
 }
 .card-btn:active {
   transform: scale(0.98);
@@ -226,7 +221,6 @@ body {
   margin-bottom: 6px;
 }
 .vault-btn {
-  width: 100%;
   border-color: #8a6414 !important;
   background: #fff3d6 !important;
   color: #2b1d02 !important;
