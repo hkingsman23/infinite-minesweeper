@@ -33,7 +33,12 @@ const canvas = document.getElementById('board') as HTMLCanvasElement;
 const panelHost = document.getElementById('panel-host')!;
 const hudHost = document.getElementById('hud-host')!;
 const dailyHeaderHost = document.getElementById('daily-header-host')!;
-const ctx = canvas.getContext('2d')!;
+// alpha:false — the canvas fully repaints its own opaque background every
+// frame (see Renderer.draw's bg fillRect), so there's never anything for the
+// browser to alpha-composite against what's behind it. Telling it that up
+// front lets it skip that compositing work every frame, which matters more
+// on lower-power mobile GPUs than on desktop.
+const ctx = canvas.getContext('2d', { alpha: false })!;
 
 let theme: 'dark' | 'light' = detectInitialTheme();
 

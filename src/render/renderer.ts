@@ -107,18 +107,25 @@ export class Renderer {
     const ts = TILE * camera.zoom;
     const { c0, c1, r0, r1 } = this.visibleRange(camera);
 
+    // The slot background and grid lines are the exact same colour for every
+    // tile, so fill the whole viewport once and batch every tile's grid rect
+    // into a single Path2D/stroke() call instead of one fillRect+strokeRect
+    // per tile. At low zoom this loop covers 1000+ tiles, and on weaker
+    // mobile GPUs it's the number of canvas calls — not the fill area — that
+    // actually costs time. The grid line sits right at each tile's edge and
+    // the cap/revealed face is always inset from it, so drawing every grid
+    // line up front (before any cap) doesn't change how anything overlaps.
+    ctx.fillStyle = theme.slot;
+    ctx.fillRect(0, 0, this.viewportW, this.viewportH);
+    const gridPath = new Path2D();
+
     for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1; c++) {
         const sr = Math.floor(r / SECTOR_SIZE);
         const sc = Math.floor(c / SECTOR_SIZE);
         const sector = world.getSector(sr, sc);
         const p = camera.worldToScreen(c * TILE, r * TILE);
-
-        ctx.fillStyle = theme.slot;
-        ctx.fillRect(p.x, p.y, ts + 0.5, ts + 0.5);
-        ctx.strokeStyle = theme.grid;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(p.x + 0.5, p.y + 0.5, ts - 1, ts - 1);
+        gridPath.rect(p.x + 0.5, p.y + 0.5, ts - 1, ts - 1);
 
         if (!sector) {
           // Not-yet-generated territory: still draw a normal covered-tile cap so
@@ -153,6 +160,10 @@ export class Renderer {
         }
       }
     }
+
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.stroke(gridPath);
 
     // Sector overlays: lock dim + gridlines.
     const s0c = Math.floor(c0 / SECTOR_SIZE);
@@ -258,17 +269,16 @@ export class Renderer {
 
     const { size, ts, originX, originY } = dailyBoardLayout(this.viewportW, this.viewportH);
 
+    ctx.fillStyle = theme.slot;
+    ctx.fillRect(originX, originY, size + 0.5, size + 0.5);
+    const gridPath = new Path2D();
+
     for (let r = 0; r < SECTOR_SIZE; r++) {
       for (let c = 0; c < SECTOR_SIZE; c++) {
         const cell = sector.cells[r][c];
         const sx = originX + c * ts;
         const sy = originY + r * ts;
-
-        ctx.fillStyle = theme.slot;
-        ctx.fillRect(sx, sy, ts + 0.5, ts + 0.5);
-        ctx.strokeStyle = theme.grid;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(sx + 0.5, sy + 0.5, ts - 1, ts - 1);
+        gridPath.rect(sx + 0.5, sy + 0.5, ts - 1, ts - 1);
 
         if (!cell.revealed) {
           this.drawCap(sx, sy, ts, cell, theme);
@@ -291,6 +301,10 @@ export class Renderer {
         }
       }
     }
+
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.stroke(gridPath);
 
     ctx.strokeStyle = theme.sector;
     ctx.lineWidth = 2;

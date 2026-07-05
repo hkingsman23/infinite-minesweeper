@@ -42,6 +42,13 @@ export class PointerController {
   // handler bails immediately when disabled rather than the two modes
   // fighting over the same taps.
   enabled = true;
+  // getBoundingClientRect() is a synchronous call into layout — cheap in
+  // isolation, but a drag/pinch gesture fires pointermove far more often
+  // than the canvas's box can actually change, so it's cached per-gesture
+  // (cleared on each onDown, and on resize) instead of re-queried on every
+  // single move event. Measurable on weaker mobile CPUs where per-call
+  // overhead adds up during a long pan.
+  private cachedRect: DOMRect | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -57,6 +64,14 @@ export class PointerController {
     canvas.addEventListener('pointercancel', this.onUp);
     canvas.addEventListener('wheel', this.onWheel, { passive: false });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('resize', () => {
+      this.cachedRect = null;
+    });
+  }
+
+  private rect(): DOMRect {
+    if (!this.cachedRect) this.cachedRect = this.canvas.getBoundingClientRect();
+    return this.cachedRect;
   }
 
   private cellAt(x: number, y: number) {
@@ -128,7 +143,7 @@ export class PointerController {
    * phones are 3), taps landed on the wrong tile with more error the further
    * from the top-left corner — mixing the two silently mismatched the scale. */
   private relPos(e: PointerEvent) {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.rect();
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
@@ -137,6 +152,10 @@ export class PointerController {
 
   private onDown = (e: PointerEvent) => {
     if (!this.enabled) return;
+    // Refresh once at the start of each gesture so drift between gestures
+    // (e.g. a layout change while the finger was up) self-corrects, without
+    // paying the cost again on every move within this one gesture.
+    this.cachedRect = null;
     if (e.button === 2) {
       // Right-click: toggle a flag immediately, no drag/reveal.
       const rp = this.relPos(e);
@@ -187,7 +206,7 @@ export class PointerController {
     const keys = [...this.pointers.keys()];
 
     if (keys.length >= 2 && this.pinch) {
-      const rect = this.canvas.getBoundingClientRect();
+      const rect = this.rect();
       const [a, b] = keys.map((k) => this.pointers.get(k)!);
       const nd = Math.hypot(a.x - b.x, a.y - b.y);
       const mx = (a.x + b.x) / 2;
