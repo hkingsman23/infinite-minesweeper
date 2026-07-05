@@ -25,6 +25,12 @@ export const icons = {
   share: svg('<path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>', 22),
   addBox: svg('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>', 22),
   device: svg('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', 22),
+  calendar: svg(
+    '<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8.5 14h1M12 14h1M15.5 14h1M8.5 17.5h1M12 17.5h1"/>',
+  ),
+  back: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+  flag: svg('<path d="M6 21V4"/><path d="M6 4h11l-3 4 3 4H6" fill="currentColor" stroke="none"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'),
 } as const;
 
 export type IconName = keyof typeof icons;

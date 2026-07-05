@@ -1,11 +1,14 @@
 import './style.css';
 import { World } from './core/world';
+import { DailyGame } from './core/dailyGame';
 import { Camera } from './render/camera';
 import { Renderer } from './render/renderer';
 import { THEMES, detectInitialTheme } from './render/theme';
 import { PointerController } from './input/pointerController';
+import { DailyPointerController } from './input/dailyPointerController';
 import { LockPanelManager } from './ui/lockPanel';
 import { Hud } from './ui/hud';
+import { DailyView } from './ui/dailyView';
 import { playSfx } from './audio/sfx';
 import { vibrate } from './audio/haptics';
 import { setupInstallPrompt } from './ui/installPrompt';
@@ -16,6 +19,7 @@ const app = document.getElementById('app')!;
 app.innerHTML = `
   <div class="game-shell">
     <div id="hud-host"></div>
+    <div id="daily-header-host" style="display: none"></div>
     <div id="board-frame">
       <canvas id="board"></canvas>
       <div id="panel-host"></div>
@@ -25,6 +29,8 @@ app.innerHTML = `
 
 const canvas = document.getElementById('board') as HTMLCanvasElement;
 const panelHost = document.getElementById('panel-host')!;
+const hudHost = document.getElementById('hud-host')!;
+const dailyHeaderHost = document.getElementById('daily-header-host')!;
 const ctx = canvas.getContext('2d')!;
 
 let theme: 'dark' | 'light' = detectInitialTheme();
@@ -93,8 +99,10 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+let mode: 'endless' | 'daily' = 'endless';
+
 const hud = new Hud(
-  document.getElementById('hud-host')!,
+  hudHost,
   world,
   () => {
     theme = theme === 'dark' ? 'light' : 'dark';
@@ -106,6 +114,7 @@ const hud = new Hud(
     camera.y = CENTER_PX;
     camera.setZoomAround(1, window.innerWidth / 2, window.innerHeight / 2, Infinity, Infinity);
   },
+  () => enterDaily(),
   theme === 'dark',
 );
 
@@ -125,9 +134,42 @@ world.on((e) => {
   }
 });
 
-new PointerController(canvas, camera, world, Infinity, Infinity, (cellCount, maxDist) => {
+const pointerController = new PointerController(canvas, camera, world, Infinity, Infinity, (cellCount, maxDist) => {
   camera.triggerCascadeZoom(cellCount, maxDist * 86, performance.now());
 });
+
+// --- Daily challenge (see core/dailyGame.ts) ---
+const dailyGame = DailyGame.today();
+let dailyWasComplete = dailyGame.isComplete();
+const dailyView = new DailyView(dailyHeaderHost, dailyGame, () => exitDaily());
+const dailyPointerController = new DailyPointerController(canvas, dailyGame, (_revealedCount, hitMine) => {
+  if (hitMine) {
+    renderer.triggerMineFlash();
+  } else if (!dailyWasComplete && dailyGame.isComplete()) {
+    playSfx('sectorClear');
+    vibrate('sectorClear');
+  }
+  dailyWasComplete = dailyGame.isComplete();
+});
+dailyPointerController.enabled = false;
+
+function enterDaily() {
+  mode = 'daily';
+  hudHost.style.display = 'none';
+  panelHost.style.display = 'none';
+  dailyHeaderHost.style.display = '';
+  pointerController.enabled = false;
+  dailyPointerController.enabled = true;
+}
+
+function exitDaily() {
+  mode = 'endless';
+  hudHost.style.display = '';
+  panelHost.style.display = '';
+  dailyHeaderHost.style.display = 'none';
+  pointerController.enabled = true;
+  dailyPointerController.enabled = false;
+}
 
 // Board starts fully covered — the player reveals the first tile themselves
 // (see Renderer.draw's ungenerated-sector placeholder and World.canRevealAt's
@@ -136,9 +178,14 @@ new PointerController(canvas, camera, world, Infinity, Infinity, (cellCount, max
 applyThemeToDom();
 
 function frame(now: number) {
-  camera.update(now, Infinity, Infinity);
-  renderer.draw(world, camera, THEMES[theme], now);
-  lockPanels.update(camera);
+  if (mode === 'endless') {
+    camera.update(now, Infinity, Infinity);
+    renderer.draw(world, camera, THEMES[theme], now);
+    lockPanels.update(camera);
+  } else {
+    renderer.drawDaily(dailyGame.getSector(), now, THEMES[theme]);
+    dailyView.update(now);
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

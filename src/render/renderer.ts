@@ -1,7 +1,7 @@
 import { Camera } from './camera';
 import { drawEmoji } from './emoji';
 import { Theme } from './theme';
-import { SECTOR_SIZE, sectorKeyStr } from '../core/types';
+import { Sector, SECTOR_SIZE, sectorKeyStr } from '../core/types';
 import { World } from '../core/world';
 
 const TILE = 32;
@@ -24,6 +24,17 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 const CLEAR_PULSE_MS = 550;
+
+/** Shared by Renderer.drawDaily and the daily input controller so the two
+ * can never drift out of sync — the board's on-screen box is a pure
+ * function of viewport size, no camera involved. */
+export function dailyBoardLayout(viewportW: number, viewportH: number) {
+  const size = Math.min(viewportW, viewportH) * 0.86;
+  const ts = size / SECTOR_SIZE;
+  const originX = (viewportW - size) / 2;
+  const originY = (viewportH - size) / 2;
+  return { size, ts, originX, originY };
+}
 
 export class Renderer {
   shake: ShakeState = { flashAlpha: 0, shakeMag: 0 };
@@ -212,6 +223,78 @@ export class Renderer {
       ctx.lineTo(this.viewportW + 20, y);
       ctx.stroke();
     }
+
+    ctx.restore();
+
+    if (this.shake.flashAlpha > 0.01) {
+      ctx.fillStyle = `rgba(220,30,50,${this.shake.flashAlpha})`;
+      ctx.fillRect(0, 0, this.viewportW, this.viewportH);
+      this.shake.flashAlpha *= 0.9;
+    }
+  }
+
+  /** Renders the daily challenge's single fixed 8x8 board, centred in the
+   * viewport with no camera/pan — deliberately a separate, much simpler path
+   * from draw() rather than reusing it: draw() always paints a covered-tile
+   * placeholder for any not-yet-generated coordinate in view (correct for
+   * the infinite endless mode, where "not generated yet" just means
+   * "haven't scrolled/cascaded there"), which would be wrong here — outside
+   * this one bounded board there's no more puzzle, so it should read as
+   * empty, not more covered ground. Reuses the same per-cell drawing (and
+   * thus the exact same flip animation, bevel, and number/emoji rendering)
+   * via drawCap/drawFace/drawRevealed. */
+  drawDaily(sector: Sector, now: number, theme: Theme) {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.viewportW, this.viewportH);
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, this.viewportW, this.viewportH);
+
+    const shakeX = this.shake.shakeMag > 0.3 ? (Math.random() * 2 - 1) * this.shake.shakeMag : 0;
+    const shakeY = this.shake.shakeMag > 0.3 ? (Math.random() * 2 - 1) * this.shake.shakeMag : 0;
+    this.shake.shakeMag *= 0.86;
+
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    const { size, ts, originX, originY } = dailyBoardLayout(this.viewportW, this.viewportH);
+
+    for (let r = 0; r < SECTOR_SIZE; r++) {
+      for (let c = 0; c < SECTOR_SIZE; c++) {
+        const cell = sector.cells[r][c];
+        const sx = originX + c * ts;
+        const sy = originY + r * ts;
+
+        ctx.fillStyle = theme.slot;
+        ctx.fillRect(sx, sy, ts + 0.5, ts + 0.5);
+        ctx.strokeStyle = theme.grid;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(sx + 0.5, sy + 0.5, ts - 1, ts - 1);
+
+        if (!cell.revealed) {
+          this.drawCap(sx, sy, ts, cell, theme);
+          continue;
+        }
+        const prog = cell.flipStart != null ? (now - cell.flipStart) / FLIP_MS : 1;
+        if (prog <= 0) {
+          this.drawCap(sx, sy, ts, cell, theme);
+          continue;
+        }
+        if (prog >= 1) {
+          this.drawRevealed(sx, sy, ts, 1, cell, theme);
+          continue;
+        }
+        const fx = Math.abs(Math.cos(prog * Math.PI));
+        if (prog < 0.5) {
+          this.drawFace(sx, sy, ts, fx, theme.cap, ts * 0.13);
+        } else {
+          this.drawRevealed(sx, sy, ts, fx, cell, theme);
+        }
+      }
+    }
+
+    ctx.strokeStyle = theme.sector;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(originX, originY, size, size);
 
     ctx.restore();
 

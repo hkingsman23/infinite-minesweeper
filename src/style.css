@@ -404,3 +404,102 @@ body {
   cursor: pointer;
   font-family: inherit;
 }
+
+/* Daily challenge (see core/dailyGame.ts, ui/dailyView.ts) */
+.daily-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #aab1be;
+}
+.theme-dark .daily-header {
+  color: #9aa0ab;
+}
+.daily-date {
+  font-weight: 600;
+  color: inherit;
+}
+.daily-spacer {
+  flex: 1;
+}
+.daily-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.daily-stat svg {
+  opacity: 0.75;
+}
+
+.daily-results-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.daily-results-backdrop.show {
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 1;
+}
+.daily-results {
+  width: 100%;
+  max-width: 320px;
+  background: #1e1f24;
+  color: #ececf0;
+  border-radius: 16px;
+  padding: 22px 20px 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(8px) scale(0.98);
+  transition:
+    transform 200ms ease,
+    opacity 200ms ease;
+  opacity: 0;
+}
+.daily-results-backdrop.show .daily-results {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.daily-results-title {
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+.daily-results-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+.daily-results-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.daily-results-num {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.daily-results-label {
+  font-size: 12px;
+  opacity: 0.6;
+}
+.daily-share-btn {
+  background: #4fa3e3 !important;
+  color: #0c1a26 !important;
+  border-color: #4fa3e3 !important;
+}
+.daily-close-btn {
+  margin-bottom: 0;
+}

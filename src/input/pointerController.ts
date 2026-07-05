@@ -37,6 +37,11 @@ export class PointerController {
   private pinch: PinchState | null = null;
   private longPressTimer: number | null = null;
   private longPressFired = false;
+  // Both endless and daily modes share one canvas/pointer stream (see
+  // main.ts) — only the active mode's controller should react, so each
+  // handler bails immediately when disabled rather than the two modes
+  // fighting over the same taps.
+  enabled = true;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -131,6 +136,7 @@ export class PointerController {
   }
 
   private onDown = (e: PointerEvent) => {
+    if (!this.enabled) return;
     if (e.button === 2) {
       // Right-click: toggle a flag immediately, no drag/reveal.
       const rp = this.relPos(e);
@@ -175,6 +181,7 @@ export class PointerController {
   };
 
   private onMove = (e: PointerEvent) => {
+    if (!this.enabled) return;
     if (!this.pointers.has(e.pointerId)) return;
     this.pointers.set(e.pointerId, this.relPos(e));
     const keys = [...this.pointers.keys()];
@@ -209,6 +216,7 @@ export class PointerController {
   };
 
   private onUp = (e: PointerEvent) => {
+    if (!this.enabled) return;
     this.cancelLongPress();
     const was = this.pointers.get(e.pointerId);
     this.pointers.delete(e.pointerId);
@@ -266,6 +274,7 @@ export class PointerController {
   };
 
   private onWheel = (e: WheelEvent) => {
+    if (!this.enabled) return;
     e.preventDefault();
     const p = this.relPos(e as unknown as PointerEvent);
     const nz = this.camera.zoom * Math.exp(-e.deltaY * 0.0015);
