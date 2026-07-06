@@ -21,7 +21,7 @@ export class Hud {
       <div class="hud-bar">
         <span class="hud-stat"><b class="hud-gems">0</b> 💎</span>
         <span class="hud-sep">·</span>
-        <span class="hud-stat"><b class="hud-cleared">0</b> sectors cleared</span>
+        <span class="hud-stat"><b class="hud-cleared">0</b> cleared</span>
         <div class="hud-spacer"></div>
         <button class="hud-btn daily-btn" aria-label="Daily challenge">${icons.calendar}</button>
         <button class="hud-btn theme-btn" aria-label="Toggle theme"></button>

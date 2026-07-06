@@ -42,6 +42,13 @@ body {
   color: #aab1be;
 }
 
+.hud-stat {
+  /* Without this, a narrow phone viewport can squeeze this span below its
+     content width and wrap "N cleared" onto two lines, puffing up the
+     whole bar's height instead of just eliding gracefully. */
+  white-space: nowrap;
+}
+
 .theme-dark .hud-bar {
   color: #9aa0ab;
 }
@@ -67,6 +74,7 @@ body {
 .hud-btn {
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
   border-radius: 10px;
   border: none;
   background: rgba(127, 127, 127, 0.18);
@@ -420,6 +428,7 @@ body {
 .daily-date {
   font-weight: 600;
   color: inherit;
+  white-space: nowrap;
 }
 .daily-spacer {
   flex: 1;
@@ -430,6 +439,7 @@ body {
   gap: 4px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .daily-stat svg {
   opacity: 0.75;
