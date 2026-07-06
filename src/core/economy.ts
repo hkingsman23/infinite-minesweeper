@@ -77,4 +77,4 @@ export function unlockPrice(solvedNeighbours: number, mineCount: number): number
   return Math.min(50, Math.round(raw));
 }
 
-export const VAULT_REWARD = 25;
+export const VAULT_REWARD = 5;

@@ -23,7 +23,7 @@ export const THEMES: Record<'dark' | 'light', Theme> = {
     sector: '#3E424C',
     num: '#D6DAE2',
     lockOverlay: 'rgba(48,7,7,0.9)',
-    doneOverlay: 'rgba(8,9,11,0.86)',
+    doneOverlay: 'rgba(8,9,11,0.4)',
     clearPulse: 'rgba(120,230,170,ALPHA)',
   },
   light: {
@@ -37,7 +37,7 @@ export const THEMES: Record<'dark' | 'light', Theme> = {
     sector: '#D98CA0',
     num: '#2B2E38',
     lockOverlay: 'rgba(55,10,10,0.9)',
-    doneOverlay: 'rgba(45,48,58,0.85)',
+    doneOverlay: 'rgba(45,48,58,0.4)',
     clearPulse: 'rgba(60,180,120,ALPHA)',
   },
 };

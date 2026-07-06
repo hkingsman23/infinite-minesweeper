@@ -1,10 +1,11 @@
 import { Camera, MAX_ZOOM, MIN_ZOOM } from '../render/camera';
-import { DAILY_WORLD_SIZE, TILE } from '../render/renderer';
+import { DAILY_WORLD_SIZE, FLIP_MS, TILE } from '../render/renderer';
 import { DailyGame } from '../core/dailyGame';
+import { RIPPLE_MS } from '../core/world';
 import { DAILY_SIZE } from '../core/types';
 import { playSfx } from '../audio/sfx';
 import { vibrate } from '../audio/haptics';
-import { showToast } from '../ui/toast';
+import { showFlagCue, showToast } from '../ui/toast';
 
 const LONG_PRESS_MS = 280;
 
@@ -42,6 +43,9 @@ export class DailyPointerController {
   private longPressFired = false;
   enabled = true;
   private cachedRect: DOMRect | null = null;
+  // See PointerController's identical field — ignores reveal taps until the
+  // current cascade's ripple animation finishes.
+  private revealLockedUntil = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -91,6 +95,7 @@ export class DailyPointerController {
     if (this.game.toggleFlag(cell.row, cell.col)) {
       playSfx('flag');
       vibrate('flag');
+      showFlagCue();
     } else {
       showToast("Can't flag an already-opened tile");
     }
@@ -198,10 +203,11 @@ export class DailyPointerController {
     }
 
     if (this.drag && this.drag.id === e.pointerId) {
-      if (!this.drag.moved && was) {
+      if (!this.drag.moved && was && performance.now() >= this.revealLockedUntil) {
         const cell = this.cellAt(was.x, was.y);
         if (cell) {
-          const result = this.game.reveal(cell.row, cell.col, performance.now());
+          const now = performance.now();
+          const result = this.game.reveal(cell.row, cell.col, now);
           if (result) {
             if (result.hitMine) {
               playSfx('explosion');
@@ -209,6 +215,7 @@ export class DailyPointerController {
             } else {
               playSfx('flip');
               vibrate('flip');
+              this.revealLockedUntil = now + result.maxDist * RIPPLE_MS + FLIP_MS;
             }
             this.onChange(result.revealedCount, result.hitMine);
           }

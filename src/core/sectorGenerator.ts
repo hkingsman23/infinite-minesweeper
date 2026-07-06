@@ -219,5 +219,6 @@ export function generateSector(
     isVault,
     vaultClaimed: false,
     genAttempts: attempts + 1,
+    lockedPrice: null,
   };
 }

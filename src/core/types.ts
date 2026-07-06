@@ -51,4 +51,11 @@ export interface Sector {
   vaultClaimed: boolean;
   /** attempts the generator needed; kept for diagnostics */
   genAttempts: number;
+  /** Gem unlock price frozen at the instant this sector locked (see
+   * World's mine-hit handler) — null whenever the sector isn't locked.
+   * Without freezing it, the price (which scales with solved-neighbour
+   * count) would keep climbing while the player solves the sectors around
+   * a locked one, which reads as a moving target rather than a price they
+   * can decide against. */
+  lockedPrice: number | null;
 }

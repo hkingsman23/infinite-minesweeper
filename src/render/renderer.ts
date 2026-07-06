@@ -190,9 +190,12 @@ export class Renderer {
         } else if (sector.cleared) {
           // Same dim *treatment* as a locked sector (just without the card),
           // but a neutral tone rather than lockOverlay's red — cleared means
-          // done, not dangerous.
+          // done, not dangerous. Lighter than the lock/vault overlays (0.4
+          // vs ~0.85-0.9 alpha) since there's no card to keep readable here
+          // — a full dim just obscured the numbers underneath for no reason.
           ctx.fillStyle = theme.doneOverlay;
           ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+          this.drawCheckmark(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w, theme.clearPulse.replace('ALPHA', '0.9'));
         }
 
         // Gold border hint: shown the instant a sector is known to be a
@@ -321,6 +324,28 @@ export class Renderer {
       ctx.fillRect(0, 0, this.viewportW, this.viewportH);
       this.shake.flashAlpha *= 0.9;
     }
+  }
+
+  /** Simple two-stroke checkmark centred at (cx,cy), scaled to a sector's
+   * on-screen width — lets a cleared sector read as "done" at a glance
+   * instead of relying on the dim overlay alone. Resets lineCap/lineJoin
+   * back to their canvas defaults afterward so this doesn't bleed into the
+   * unrelated strokes (vault border, sector gridlines) drawn later in the
+   * same frame. */
+  private drawCheckmark(cx: number, cy: number, sectorSize: number, color: string) {
+    const ctx = this.ctx;
+    const s = sectorSize * 0.11;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, sectorSize * 0.016);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - s * 1.3, cy - s * 0.1);
+    ctx.lineTo(cx - s * 0.2, cy + s * 1.1);
+    ctx.lineTo(cx + s * 1.7, cy - s * 1.2);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
   }
 
   private drawFace(sx: number, sy: number, ts: number, fx: number, color: string, rad: number) {

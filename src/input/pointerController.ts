@@ -1,10 +1,10 @@
 import { Camera, MAX_ZOOM, MIN_ZOOM } from '../render/camera';
-import { TILE } from '../render/renderer';
+import { FLIP_MS, TILE } from '../render/renderer';
 import { World, RIPPLE_MS } from '../core/world';
 import { SECTOR_SIZE } from '../core/types';
 import { playSfx } from '../audio/sfx';
 import { vibrate } from '../audio/haptics';
-import { showToast } from '../ui/toast';
+import { showFlagCue, showToast } from '../ui/toast';
 
 // Cascades revealing more tiles than this get their flip sfx thinned out
 // evenly rather than one-per-cell, so an extreme cascade can't spawn
@@ -49,6 +49,10 @@ export class PointerController {
   // single move event. Measurable on weaker mobile CPUs where per-call
   // overhead adds up during a long pan.
   private cachedRect: DOMRect | null = null;
+  // Set after a reveal to the moment its cascade's ripple animation finishes
+  // (see onUp) — taps are ignored until then so the player can't queue up
+  // another reveal (and its own overlapping cascade/sfx/zoom) mid-animation.
+  private revealLockedUntil = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -93,6 +97,7 @@ export class PointerController {
     if (this.world.toggleFlag(row, col)) {
       playSfx('flag');
       vibrate('flag');
+      showFlagCue();
     } else {
       showToast("Can't flag an already-opened tile");
     }
@@ -257,7 +262,7 @@ export class PointerController {
     }
 
     if (this.drag && this.drag.id === e.pointerId) {
-      if (!this.drag.moved && was) {
+      if (!this.drag.moved && was && performance.now() >= this.revealLockedUntil) {
         const { row, col } = this.cellAt(was.x, was.y);
         const sector = this.world.getSector(Math.floor(row / SECTOR_SIZE), Math.floor(col / SECTOR_SIZE));
         if (this.world.resolveWrongFlag(row, col, performance.now())) {
@@ -278,6 +283,9 @@ export class PointerController {
             vibrate('flip');
             this.playCascadeFlips(result.distances);
             this.onTapRevealed(result.revealedCount, result.maxDist);
+            // Ignore further reveal taps until this cascade's last ring has
+            // finished its flip animation, matching Renderer's FLIP_MS.
+            this.revealLockedUntil = now + result.maxDist * RIPPLE_MS + FLIP_MS;
           }
         }
       }

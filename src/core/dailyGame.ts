@@ -93,6 +93,7 @@ export class DailyGame {
             isVault: false,
             vaultClaimed: false,
             genAttempts: 0,
+            lockedPrice: null,
           });
           game.mistakes = stored.mistakes;
           game.startedAt = stored.startedAt;
@@ -213,7 +214,7 @@ export class DailyGame {
    * play time is tracked separately via startedAt/completedAt, which use
    * Date.now() instead precisely because they DO get persisted and need to
    * survive a reload (see getElapsedMs). */
-  reveal(row: number, col: number, now: number): { revealedCount: number; hitMine: boolean } | null {
+  reveal(row: number, col: number, now: number): { revealedCount: number; maxDist: number; hitMine: boolean } | null {
     if (this.isComplete()) return null;
     const cell = this.cellAt(row, col);
     if (!cell || cell.revealed || cell.flagged) return null;
@@ -225,23 +226,29 @@ export class DailyGame {
       this.mistakes++;
       this.checkComplete();
       this.save();
-      return { revealedCount: 1, hitMine: true };
+      return { revealedCount: 1, maxDist: 0, hitMine: true };
     }
 
     // Small bounded flood fill — same adjacent===0 cascade rule as the
     // endless game, just clipped to this board's fixed size instead of
-    // crossing sector boundaries.
+    // crossing sector boundaries. Ripple pacing is capped the same way too
+    // (see World.reveal's RIPPLE_CAP_DIST) so a big reveal still settles
+    // within a bounded, snappy window.
+    const RIPPLE_CAP_DIST = 14;
     const queue: [number, number, number][] = [[row, col, 0]];
     const seen = new Set<string>([`${row},${col}`]);
     let revealedCount = 0;
+    let maxDist = 0;
 
     while (queue.length) {
-      const [r, c, dist] = queue.shift()!;
+      const [r, c, rawDist] = queue.shift()!;
+      const dist = Math.min(rawDist, RIPPLE_CAP_DIST);
       const cs = this.cellAt(r, c);
       if (!cs || cs.revealed || cs.flagged || cs.mine) continue;
       cs.revealed = true;
       cs.flipStart = now + dist * 86;
       revealedCount++;
+      if (dist > maxDist) maxDist = dist;
       if (cs.adjacent === 0) {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
@@ -260,7 +267,7 @@ export class DailyGame {
 
     this.checkComplete();
     this.save();
-    return { revealedCount, hitMine: false };
+    return { revealedCount, maxDist, hitMine: false };
   }
 
   toggleFlag(row: number, col: number): boolean {

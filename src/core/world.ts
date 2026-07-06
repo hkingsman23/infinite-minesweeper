@@ -34,6 +34,7 @@ interface SerializedSector {
   isVault: boolean;
   vaultClaimed: boolean;
   genAttempts: number;
+  lockedPrice: number | null;
   cells: SerializedCell[][];
 }
 
@@ -91,6 +92,7 @@ export class World {
           isVault: s.isVault,
           vaultClaimed: s.vaultClaimed,
           genAttempts: s.genAttempts,
+          lockedPrice: s.lockedPrice ?? null,
         });
       }
       return world;
@@ -118,6 +120,7 @@ export class World {
           isVault: s.isVault,
           vaultClaimed: s.vaultClaimed,
           genAttempts: s.genAttempts,
+          lockedPrice: s.lockedPrice,
           cells: s.cells.map((row) =>
             row.map((c) => ({
               mine: c.mine,
@@ -299,6 +302,11 @@ export class World {
       this.save();
       setTimeout(() => {
         sector.locked = true;
+        // Freeze the gem price the instant the sector locks — computed here
+        // (while lockedPrice is still null, so unlockPriceFor falls through
+        // to a fresh calculation) rather than left dynamic, so it can't keep
+        // climbing while the player solves neighbours around this sector.
+        sector.lockedPrice = this.unlockPriceFor(sr, sc);
         this.emit({ type: 'sectorLocked', sr, sc });
         this.save();
       }, 460);
@@ -326,6 +334,16 @@ export class World {
     // fix that doesn't touch this cap (pacing/animation, see RIPPLE_MS and
     // Camera.triggerCascadeZoom) rather than truncating revealed state.
     const MAX_CASCADE_CELLS = 3000;
+    // Ripple *pacing* is separately capped at this many BFS rings — a truly
+    // huge cascade would otherwise keep staggering its flip timing further
+    // and further out, taking several seconds to visually settle. Capping
+    // dist (used only for flipStart/sfx timing, never for which cells get
+    // revealed or how the BFS expands) means even a huge cascade's flips
+    // all land within a bounded, snappy window instead of dragging on —
+    // exactly the "pacing, not truncating revealed state" fix called for
+    // above, addressing cascades still feeling too big/slow at the extreme
+    // end without touching MAX_CASCADE_CELLS or correctness.
+    const RIPPLE_CAP_DIST = 14;
 
     const key = (r: number, c: number) => `${r},${c}`;
     const queue: [number, number, number][] = [[row, col, 0]];
@@ -337,7 +355,8 @@ export class World {
 
     while (queue.length) {
       if (revealedCount >= MAX_CASCADE_CELLS) break;
-      const [r, c, dist] = queue.shift()!;
+      const [r, c, rawDist] = queue.shift()!;
+      const dist = Math.min(rawDist, RIPPLE_CAP_DIST);
       const sr2 = Math.floor(r / SECTOR_SIZE);
       const sc2 = Math.floor(c / SECTOR_SIZE);
       const cellSector = this.ensureSector(sr2, sc2, r, c);
@@ -463,6 +482,7 @@ export class World {
         const { solved } = this.solvedNeighbourCount(n.sr, n.sc);
         if (solved === 8) {
           n.locked = false;
+          n.lockedPrice = null;
           this.emit({ type: 'sectorAutoUnlocked', sr: n.sr, sc: n.sc });
           this.tryCompleteSector(n, performance.now());
         }
@@ -470,9 +490,16 @@ export class World {
     }
   }
 
+  /** Locked sectors return their frozen lockedPrice (see reveal()'s mine-hit
+   * handler) rather than recomputing — otherwise the price would keep
+   * rising as the player solves the sectors around it, a moving target
+   * instead of something they can actually decide against. Unlocked/
+   * not-yet-locked sectors (e.g. a hypothetical price preview) fall back to
+   * a live calculation, though nothing currently calls this while unlocked. */
   unlockPriceFor(sr: number, sc: number): number {
     const sector = this.getSector(sr, sc);
     if (!sector) return 0;
+    if (sector.locked && sector.lockedPrice != null) return sector.lockedPrice;
     const { solved } = this.solvedNeighbourCount(sr, sc);
     const mineCount = sector.cells.flat().filter((c) => c.mine).length;
     return unlockPrice(solved, mineCount);
@@ -484,6 +511,7 @@ export class World {
     const sector = this.getSector(sr, sc);
     if (sector) {
       sector.locked = false;
+      sector.lockedPrice = null;
       this.tryCompleteSector(sector, performance.now());
     }
     this.save();
@@ -494,6 +522,7 @@ export class World {
     const sector = this.getSector(sr, sc);
     if (sector) {
       sector.locked = false;
+      sector.lockedPrice = null;
       this.tryCompleteSector(sector, performance.now());
     }
     this.save();
