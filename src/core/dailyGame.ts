@@ -231,18 +231,14 @@ export class DailyGame {
 
     // Small bounded flood fill — same adjacent===0 cascade rule as the
     // endless game, just clipped to this board's fixed size instead of
-    // crossing sector boundaries. Ripple pacing is capped the same way too
-    // (see World.reveal's RIPPLE_CAP_DIST) so a big reveal still settles
-    // within a bounded, snappy window.
-    const RIPPLE_CAP_DIST = 14;
+    // crossing sector boundaries.
     const queue: [number, number, number][] = [[row, col, 0]];
     const seen = new Set<string>([`${row},${col}`]);
     let revealedCount = 0;
     let maxDist = 0;
 
     while (queue.length) {
-      const [r, c, rawDist] = queue.shift()!;
-      const dist = Math.min(rawDist, RIPPLE_CAP_DIST);
+      const [r, c, dist] = queue.shift()!;
       const cs = this.cellAt(r, c);
       if (!cs || cs.revealed || cs.flagged || cs.mine) continue;
       cs.revealed = true;

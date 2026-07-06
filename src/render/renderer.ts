@@ -334,9 +334,9 @@ export class Renderer {
    * same frame. */
   private drawCheckmark(cx: number, cy: number, sectorSize: number, color: string) {
     const ctx = this.ctx;
-    const s = sectorSize * 0.11;
+    const s = sectorSize * 0.07;
     ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(2, sectorSize * 0.016);
+    ctx.lineWidth = Math.max(2, sectorSize * 0.01);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();

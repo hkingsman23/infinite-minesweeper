@@ -334,16 +334,6 @@ export class World {
     // fix that doesn't touch this cap (pacing/animation, see RIPPLE_MS and
     // Camera.triggerCascadeZoom) rather than truncating revealed state.
     const MAX_CASCADE_CELLS = 3000;
-    // Ripple *pacing* is separately capped at this many BFS rings — a truly
-    // huge cascade would otherwise keep staggering its flip timing further
-    // and further out, taking several seconds to visually settle. Capping
-    // dist (used only for flipStart/sfx timing, never for which cells get
-    // revealed or how the BFS expands) means even a huge cascade's flips
-    // all land within a bounded, snappy window instead of dragging on —
-    // exactly the "pacing, not truncating revealed state" fix called for
-    // above, addressing cascades still feeling too big/slow at the extreme
-    // end without touching MAX_CASCADE_CELLS or correctness.
-    const RIPPLE_CAP_DIST = 14;
 
     const key = (r: number, c: number) => `${r},${c}`;
     const queue: [number, number, number][] = [[row, col, 0]];
@@ -355,8 +345,7 @@ export class World {
 
     while (queue.length) {
       if (revealedCount >= MAX_CASCADE_CELLS) break;
-      const [r, c, rawDist] = queue.shift()!;
-      const dist = Math.min(rawDist, RIPPLE_CAP_DIST);
+      const [r, c, dist] = queue.shift()!;
       const sr2 = Math.floor(r / SECTOR_SIZE);
       const sc2 = Math.floor(c / SECTOR_SIZE);
       const cellSector = this.ensureSector(sr2, sc2, r, c);
