@@ -11,6 +11,8 @@ import { LockPanelManager } from './ui/lockPanel';
 import { Hud } from './ui/hud';
 import { DailyView } from './ui/dailyView';
 import { showResetConfirm } from './ui/resetConfirm';
+import { showSaveTransfer } from './ui/saveTransferModal';
+import { CAMERA_STORAGE_KEY } from './core/saveTransfer';
 import { playSfx } from './audio/sfx';
 import { vibrate } from './audio/haptics';
 import { setupInstallPrompt } from './ui/installPrompt';
@@ -56,8 +58,6 @@ const world = World.load();
 const camera = new Camera(window.innerWidth, window.innerHeight);
 const CENTER_PX = (WORLD_CENTER * SECTOR_SIZE + SECTOR_SIZE / 2) * TILE;
 
-const CAMERA_STORAGE_KEY = 'infinite-minesweeper-camera-v1';
-
 function loadCameraState(): { x: number; y: number; zoom: number } | null {
   try {
     const raw = localStorage.getItem(CAMERA_STORAGE_KEY);
@@ -67,10 +67,10 @@ function loadCameraState(): { x: number; y: number; zoom: number } | null {
   }
 }
 
-// Flipped just before resetAll() reloads the page — beforeunload fires as
-// part of that same reload and would otherwise re-save the (about-to-be-
-// stale) in-memory camera position right after resetAll() clears it,
-// silently undoing that one piece of the wipe.
+// Flipped just before resetAll()/restoreSave() reloads the page —
+// beforeunload fires as part of that same reload and would otherwise
+// re-save the (about-to-be-stale) in-memory camera position right after
+// storage was cleared/overwritten, silently undoing that piece of it.
 let resetting = false;
 
 function saveCameraState() {
@@ -101,6 +101,15 @@ function resetAll() {
       // Non-fatal — matches the tolerance every save()/load() here already has.
     }
   }
+  window.location.reload();
+}
+
+/** Called after core/saveTransfer.ts's importSave() has already written the
+ * restored data into localStorage — just needs the same reload + camera-
+ * save-suppression treatment as resetAll() so the current (about-to-be-
+ * stale) in-memory state doesn't get re-saved over what was just restored. */
+function restoreSave() {
+  resetting = true;
   window.location.reload();
 }
 
@@ -157,7 +166,7 @@ const hud = new Hud(
     camera.setZoomAround(1, window.innerWidth / 2, window.innerHeight / 2, Infinity, Infinity);
   },
   () => enterDaily(),
-  () => showResetConfirm(resetAll),
+  () => showResetConfirm(resetAll, () => showSaveTransfer(restoreSave)),
   theme === 'dark',
 );
 

@@ -4,7 +4,7 @@
  * testing convenience but is a reasonable thing for a real player to want
  * too ("start completely fresh"), so it's a proper UI affordance rather
  * than a console-only debug hook. */
-export function showResetConfirm(onConfirm: () => void) {
+export function showResetConfirm(onConfirm: () => void, onOpenTransfer: () => void) {
   if (document.querySelector('.reset-confirm-backdrop')) return;
 
   const backdrop = document.createElement('div');
@@ -18,6 +18,7 @@ export function showResetConfirm(onConfirm: () => void) {
       </p>
       <button class="card-btn reset-confirm-cancel">Cancel</button>
       <button class="card-btn reset-confirm-danger">Reset everything</button>
+      <button class="reset-confirm-transfer-link">Back up or restore your save first</button>
     </div>
   `;
   document.body.appendChild(backdrop);
@@ -34,5 +35,9 @@ export function showResetConfirm(onConfirm: () => void) {
   backdrop.querySelector('.reset-confirm-danger')!.addEventListener('click', () => {
     close();
     onConfirm();
+  });
+  backdrop.querySelector('.reset-confirm-transfer-link')!.addEventListener('click', () => {
+    close();
+    onOpenTransfer();
   });
 }
