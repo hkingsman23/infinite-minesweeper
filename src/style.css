@@ -681,3 +681,19 @@ body {
   background: rgba(255, 255, 255, 0.08) !important;
   margin-bottom: 0 !important;
 }
+
+/* Deliberately tiny/quiet — just needs to exist and be a real crawlable
+   link (for the AdSense review and general good practice), not compete for
+   attention with the actual HUD controls. */
+.privacy-link {
+  position: fixed;
+  right: 8px;
+  bottom: 6px;
+  z-index: 500;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  text-decoration: none;
+}
+.privacy-link:hover {
+  color: rgba(255, 255, 255, 0.55);
+}
