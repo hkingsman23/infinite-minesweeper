@@ -14,12 +14,13 @@ export class Hud {
     onRecenter: () => void,
     onOpenDaily: () => void,
     onResetAll: () => void,
+    onOpenGemShop: () => void,
     initialIsDark: boolean,
   ) {
     this.isDark = initialIsDark;
     host.innerHTML = `
       <div class="hud-bar">
-        <span class="hud-stat"><b class="hud-gems">0</b> 💎</span>
+        <button class="hud-stat hud-gem-stat"><b class="hud-gems">0</b> 💎</button>
         <span class="hud-sep">·</span>
         <span class="hud-stat"><b class="hud-cleared">0</b> cleared</span>
         <div class="hud-spacer"></div>
@@ -33,6 +34,7 @@ export class Hud {
     this.clearedEl = host.querySelector('.hud-cleared')!;
     this.themeBtn = host.querySelector('.theme-btn')!;
     this.themeBtn.addEventListener('click', onThemeToggle);
+    host.querySelector('.hud-gem-stat')!.addEventListener('click', onOpenGemShop);
     host.querySelector('.recenter-btn')!.addEventListener('click', onRecenter);
     host.querySelector('.daily-btn')!.addEventListener('click', onOpenDaily);
     host.querySelector('.reset-btn')!.addEventListener('click', onResetAll);

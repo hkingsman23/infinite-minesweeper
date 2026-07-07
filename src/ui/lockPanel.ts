@@ -2,6 +2,7 @@ import { Camera } from '../render/camera';
 import { Renderer } from '../render/renderer';
 import { World } from '../core/world';
 import { VAULT_REWARD } from '../core/economy';
+import { watchRewardedAd } from '../core/ads';
 import { playSfx } from '../audio/sfx';
 import { vibrate } from '../audio/haptics';
 import { icons } from './icons';
@@ -39,7 +40,7 @@ export class LockPanelManager {
     `;
     el.querySelector('.ad-btn')!.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.simulateAd(() => {
+      watchRewardedAd(() => {
         this.world.unlockWithAd(sr, sc);
         playSfx('unlock');
         vibrate('unlock');
@@ -71,7 +72,7 @@ export class LockPanelManager {
     `;
     el.querySelector('.vault-btn')!.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.simulateAd(() => {
+      watchRewardedAd(() => {
         if (this.world.claimVault(sr, sc, VAULT_REWARD)) {
           playSfx('vault');
           vibrate('vault');
@@ -83,11 +84,6 @@ export class LockPanelManager {
     });
     this.host.appendChild(el);
     return { el, kind: 'vault', sr, sc, lastSolved: -1 };
-  }
-
-  private simulateAd(onComplete: () => void) {
-    // Stand-in for a real rewarded-ad SDK call (AdSense H5 Games Ads in production).
-    setTimeout(onComplete, 400);
   }
 
   private fillLockCard(entry: PanelEntry) {
