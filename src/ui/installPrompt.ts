@@ -49,7 +49,7 @@ function showBanner() {
   const el = document.createElement('div');
   el.className = 'install-banner';
   el.innerHTML = `
-    <span class="install-banner-text">Install Infinite Minesweeper for quick access</span>
+    <span class="install-banner-text">Install Minesweeper Beyond for quick access</span>
     <button class="install-banner-btn install-btn">Install</button>
     <button class="install-banner-btn install-dismiss" aria-label="Dismiss">✕</button>
   `;
@@ -98,7 +98,7 @@ function showIOSInstructions() {
       </div>
       <div class="ios-install-row">
         <span class="ios-install-icon">${icons.device}</span>
-        <p>Now you can open Infinite Minesweeper right from your home screen — even offline.</p>
+        <p>Now you can open Minesweeper Beyond right from your home screen — even offline.</p>
       </div>
       <button class="ios-install-close">Got it</button>
     </div>

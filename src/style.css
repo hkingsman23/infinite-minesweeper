@@ -701,16 +701,20 @@ body {
 /* Deliberately tiny/quiet — just needs to exist and be a real crawlable
    link (for the AdSense review and general good practice), not compete for
    attention with the actual HUD controls. */
-.privacy-link {
+.footer-links {
   position: fixed;
   right: 8px;
   bottom: 6px;
   z-index: 500;
+  display: flex;
+  gap: 10px;
+}
+.footer-links a {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.28);
   text-decoration: none;
 }
-.privacy-link:hover {
+.footer-links a:hover {
   color: rgba(255, 255, 255, 0.55);
 }
 

@@ -1,6 +1,6 @@
 {
-  "name": "Infinite Minesweeper",
-  "short_name": "Minesweeper",
+  "name": "Minesweeper Beyond",
+  "short_name": "Mine Beyond",
   "description": "An infinite, no-guess minesweeper — every board is solvable by pure logic, no luck required.",
   "start_url": "/",
   "scope": "/",
