@@ -97,7 +97,7 @@ export class DailyView {
     const n = this.game.mistakes;
     const mistakeText = n === 0 ? 'no mistakes' : `${n} mistake${n === 1 ? '' : 's'}`;
     const streakText = this.game.streak > 1 ? ` · 🔥 ${this.game.streak}-day streak` : '';
-    return `Infinite Minesweeper — Daily ${this.game.dateStr}\n⏱ ${formatTime(elapsedMs)} · ${mistakeText}${streakText}\n${location.origin}`;
+    return `Minesweeper Beyond — Daily ${this.game.dateStr}\n⏱ ${formatTime(elapsedMs)} · ${mistakeText}${streakText}\n${location.origin}`;
   }
 
   destroy() {
