@@ -12,6 +12,7 @@ import { Hud } from './ui/hud';
 import { DailyView } from './ui/dailyView';
 import { showResetConfirm } from './ui/resetConfirm';
 import { showSaveTransfer } from './ui/saveTransferModal';
+import { showGemShop } from './ui/gemShop';
 import { CAMERA_STORAGE_KEY } from './core/saveTransfer';
 import { playSfx } from './audio/sfx';
 import { vibrate } from './audio/haptics';
@@ -167,6 +168,7 @@ const hud = new Hud(
   },
   () => enterDaily(),
   () => showResetConfirm(resetAll, () => showSaveTransfer(restoreSave)),
+  () => showGemShop(world, (amount) => hud.flyGems(amount)),
   theme === 'dark',
 );
 

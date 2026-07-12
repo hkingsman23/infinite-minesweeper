@@ -49,6 +49,22 @@ body {
   white-space: nowrap;
 }
 
+/* The gem stat is a <button> (opens the gem shop) rather than a plain
+   <span> like the others, so it needs its native button chrome reset back
+   to looking like the rest of the HUD text. */
+.hud-gem-stat {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.hud-gem-stat:active {
+  opacity: 0.7;
+}
+
 .theme-dark .hud-bar {
   color: #9aa0ab;
 }
@@ -700,4 +716,74 @@ body {
 }
 .footer-links a:hover {
   color: rgba(255, 255, 255, 0.55);
+}
+
+/* Gem shop (see ui/gemShop.ts) — same overlay/card pattern as reset-confirm
+   and save-transfer. */
+.gem-shop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.gem-shop-backdrop.show {
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 1;
+}
+.gem-shop {
+  width: 100%;
+  max-width: 320px;
+  background: #1e1f24;
+  color: #ececf0;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(8px) scale(0.98);
+  transition:
+    transform 200ms ease,
+    opacity 200ms ease;
+  opacity: 0;
+}
+.gem-shop-backdrop.show .gem-shop {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.gem-shop-title {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+.gem-shop-sub {
+  margin: 14px 0 8px;
+  font-size: 12px;
+  opacity: 0.65;
+  text-align: center;
+}
+.gem-shop-ad-btn {
+  background: rgba(120, 200, 255, 0.14) !important;
+  border-color: rgba(120, 200, 255, 0.3) !important;
+}
+.gem-shop-ad-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.gem-shop-ad-remaining {
+  opacity: 0.6;
+  font-size: 12px;
+}
+.gem-pack-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.gem-shop-close {
+  background: rgba(255, 255, 255, 0.08) !important;
+  margin-top: 6px;
+  margin-bottom: 0 !important;
 }

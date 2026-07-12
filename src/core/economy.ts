@@ -4,9 +4,25 @@ const STORAGE_KEY = ECONOMY_STORAGE_KEY;
 export interface EconomyState {
   gems: number;
   sectorsCleared: number;
+  /** Local calendar date (YYYY-MM-DD) the ad-for-gems cap below last reset. */
+  adGemsDate: string | null;
+  adGemsCountToday: number;
 }
 
-const DEFAULT_STATE: EconomyState = { gems: 15, sectorsCleared: 0 };
+const DEFAULT_STATE: EconomyState = { gems: 15, sectorsCleared: 0, adGemsDate: null, adGemsCountToday: 0 };
+
+// Rewarded "watch an ad for gems" top-up (see
+// GEM_ECONOMY_AND_MONETIZATION.md §3.1) — separate from the sector-unlock/
+// vault-claim ad flows, which grant their own specific rewards rather than
+// raw gems. Capped per calendar day so it can't be farmed for unlimited
+// free currency.
+const AD_GEM_REWARD = 5;
+const AD_DAILY_CAP = 5;
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function load(): EconomyState {
   try {
@@ -16,6 +32,8 @@ function load(): EconomyState {
     return {
       gems: parsed.gems ?? DEFAULT_STATE.gems,
       sectorsCleared: parsed.sectorsCleared ?? 0,
+      adGemsDate: parsed.adGemsDate ?? null,
+      adGemsCountToday: parsed.adGemsCountToday ?? 0,
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -63,6 +81,27 @@ export class Economy {
     this.state.sectorsCleared += 1;
     this.addGems(REWARD);
     return REWARD;
+  }
+
+  /** Resets the counter on first use of a new calendar day, then grants the
+   * top-up if today's cap isn't already used up. Returns the amount granted,
+   * or null if the player has already hit today's cap (caller should treat
+   * null as "don't show a reward, the ad button should already be disabled"). */
+  claimAdGems(): number | null {
+    const today = todayStr();
+    if (this.state.adGemsDate !== today) {
+      this.state.adGemsDate = today;
+      this.state.adGemsCountToday = 0;
+    }
+    if (this.state.adGemsCountToday >= AD_DAILY_CAP) return null;
+    this.state.adGemsCountToday += 1;
+    this.addGems(AD_GEM_REWARD);
+    return AD_GEM_REWARD;
+  }
+
+  adGemsRemainingToday(): number {
+    if (this.state.adGemsDate !== todayStr()) return AD_DAILY_CAP;
+    return Math.max(0, AD_DAILY_CAP - this.state.adGemsCountToday);
   }
 }
 
